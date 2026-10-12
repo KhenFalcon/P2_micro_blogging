@@ -7,6 +7,13 @@ This is a project developed by Dr. Menik to give the students an opportunity to 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Microblogging Platform</title>
+
+    <!--
+        This avoids creating a /favicon.ico GET request when successfully logging in and loading on to the home (/) page. I don't know why, but for some reason it causes the authentication to reset (to unauthenticated) :/
+    -->
+    <link rel="icon" href="data:,">
+
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="/css/styles.css">
     <script src="/js/main.js" defer></script>
