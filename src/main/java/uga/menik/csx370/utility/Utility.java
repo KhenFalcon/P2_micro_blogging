@@ -13,13 +13,13 @@ public class Utility {
 
     public static List<FollowableUser> createSampleFollowableUserList() {
         List<FollowableUser> followableUsers = new ArrayList<>();
-        followableUsers.add(new FollowableUser("1", "John", "Doe",
+        followableUsers.add(new FollowableUser("1", "Anakin", "Skywalker",
                 true, "Mar 07, 2026, 10:54 PM"));
-        followableUsers.add(new FollowableUser("2", "Jane", "Doe",
+        followableUsers.add(new FollowableUser("2", "Luke", "Skywalker",
                 false, "Mar 05, 2026, 11:00 AM"));
-        followableUsers.add(new FollowableUser("3", "Alice", "Smith",
+        followableUsers.add(new FollowableUser("3", "Leah", "Organa",
                 true, "Mar 06, 2026, 09:30 AM"));
-        followableUsers.add(new FollowableUser("4", "Bob", "Brown",
+        followableUsers.add(new FollowableUser("4", "Darth", "Vader",
                 false, "Mar 02, 2026, 08:15 PM"));
         return followableUsers;
     }
