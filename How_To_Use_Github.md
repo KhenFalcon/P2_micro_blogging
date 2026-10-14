@@ -15,7 +15,7 @@ There's a lot of text here, but it is really just the basics of how to use git a
     - make sure your terminal is in the correct working directory. You might need to use the `$ cd <location>` command.
 2) Create a local git repository: `$ git init`
 3) Create local clone of the remote repository: `$ git clone <url>`
-    - For this project, the `<url>` is: https://github.com/KhenFalcon/P1_relational_algebra.git
+    - For this project, the `<url>` is: https://github.com/KhenFalcon/p2_micro_blogging.git
     - **Note:** unlike forking, the `clone` command still retains its connection to the remote repository. This means (theoretically) you can work on your local "clone" repository, then pull (read others' changes) and push (write your own changes) to the remote repository. 
 4) You may have to ask the repository owner ( Josh >:D ) for collaborator status, in order to push (write) to the remote repository
 5) Create your own working branch: `$ git branch <name>-working-branch`
