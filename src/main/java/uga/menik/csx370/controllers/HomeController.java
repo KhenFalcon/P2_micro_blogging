@@ -9,6 +9,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.Post;
+import uga.menik.csx370.services.HomeService;
 import uga.menik.csx370.utility.Utility;
 
 /**
@@ -25,6 +27,13 @@ import uga.menik.csx370.utility.Utility;
 @Controller
 @RequestMapping
 public class HomeController {
+
+    private final HomeService homeService;
+
+    @Autowired
+    public HomeController(HomeService homeService) {
+        this.homeService = homeService;
+    }
 
     /**
      * This is the specific function that handles the root URL itself.
@@ -40,7 +49,7 @@ public class HomeController {
 
         // Following line populates sample data.
         // You should replace it with actual data from the database.
-        List<Post> posts = Utility.createSamplePostsListWithoutComments();
+        List<Post> posts = homeService.getPosts(error);
         mv.addObject("posts", posts);
 
         // If an error occured, you can set the following property with the
