@@ -1,2 +1,2 @@
-mvn spring-boot:run -D"spring-boot.run.arguments=--server.port=8081"
+mvn spring-boot:run --% -Dspring-boot.run.arguments="--server.port=8081"
 pause

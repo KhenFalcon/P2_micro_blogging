@@ -131,4 +131,32 @@ public class UserService {
         }
     }
 
+    /**
+     * If the userId exists in the database, this method will return a User object with the user's 
+     * details. If the userId does not exist, it will return null.
+     * @param userId
+     * @return A user object of the given userId (if it exists) or null (if it doesn't).
+     */
+    public User getUser(String userId) {
+        final String getUserSql = "select * from user where userId = ?";
+
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement getUserStmt = conn.prepareStatement(getUserSql)) {
+
+            getUserStmt.setString(1, userId);
+
+            try (ResultSet rs = getUserStmt.executeQuery()) {
+                if (rs.next()) {
+                    String firstName = rs.getString("firstName");
+                    String lastName = rs.getString("lastName");
+                    return new User(userId, firstName, lastName);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null; // Return null if user not found or an error occurred
+    }
+
 }

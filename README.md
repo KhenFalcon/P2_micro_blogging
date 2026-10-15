@@ -12,12 +12,23 @@ This project is meant to simulate a web-blogging application, where users can in
 **Provided Code:**
 
 **Mia Martinez:**
+- Implemented profile page
+- Implemented features of a post
+- Created and Managed database schema
 
 **Amy Vu:**
+- Implemented posting function
+- Implemented targetted posts on home page
 
 **Joshua Mark:**
+- Implemented hashtag searching
+- Implemented bookmarks page
+- Created github and README files
 
 **Sophia Park:**
+- Implemented viewing posts of specific user (profile page)
+- Implemented listing all users in the platform (people page)
+- Managed contribution form
 
 **Adiva Parisa:**
 

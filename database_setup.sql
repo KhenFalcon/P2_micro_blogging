@@ -25,7 +25,7 @@ create table if not exists basicPost (
     userId int,
     primary key (postID), 
     foreign key (userId) references user(userId)
-)
+);
 -- can get userId from user object - double check this
 
 create table if not exists post(
@@ -36,13 +36,13 @@ create table if not exists post(
     postId int,
     primary key (postId),
     foreign key (postId) references basicPost(postId)
-)
+);
 
 create table if not exists expandedPost(
     postId int, 
     primary key (postId),
     foreign key (postId) references post(postId)
-)
+);
 
 create table if not exists comments(
     commentId int,
@@ -53,4 +53,4 @@ create table if not exists comments(
     primary key (commentId),
     foreign key (postId) references basicPost(postId),
     foreign key (userId) references user(userId)
-)
+);
