@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.sql.DataSource;
 
@@ -78,6 +79,7 @@ public class PostService {
      */
     public void createPost(String postText) {
         // Write an SQL query to insert a new post into the database.
+        if (Objects.equals(postText, "")) return;
         final String createPostSql = "INSERT INTO basicPost (postId, content, postDate, userId) VALUES (?, ?, ?, ?)";
         // final String createPostSql = "INSERT INTO post (postId, content, postDate, userId, heartsCount, bookmarlsCount, isHearted, isBookmarked) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
