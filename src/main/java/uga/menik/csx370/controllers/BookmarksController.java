@@ -7,13 +7,16 @@ package uga.menik.csx370.controllers;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.Post;
-import uga.menik.csx370.utility.Utility;
+import uga.menik.csx370.models.User;
+import uga.menik.csx370.services.BookmarksService;
+import uga.menik.csx370.services.UserService;
 
 /**
  * Handles /bookmarks and its sub URLs.
@@ -26,6 +29,15 @@ import uga.menik.csx370.utility.Utility;
 @RequestMapping("/bookmarks")
 public class BookmarksController {
 
+    private final BookmarksService bookmarksService;
+    private final UserService userService;
+
+    @Autowired
+    public BookmarksController(BookmarksService bookmarksService, UserService userService) {
+        this.bookmarksService = bookmarksService;
+        this.userService = userService;
+    }
+
     /**
      * /bookmarks URL itself is handled by this.
      */
@@ -36,9 +48,10 @@ public class BookmarksController {
         // in the template using Java objects assigned to named properties.
         ModelAndView mv = new ModelAndView("posts_page");
 
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
-        List<Post> posts = Utility.createSamplePostsListWithoutComments();
+        // Following lines populate sample data.
+        User user = userService.getLoggedInUser();
+
+        List<Post> posts = bookmarksService.getPosts(user.getUserId());
         mv.addObject("posts", posts);
 
         // If an error occured, you can set the following property with the
@@ -46,9 +59,10 @@ public class BookmarksController {
         // String errorMessage = "Some error occured!";
         // mv.addObject("errorMessage", errorMessage);
 
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
+        // Show no content message if posts is empty
+        if (posts.size() == 0) {
+            mv.addObject("isNoContent", true);
+        }
 
         return mv;
     }
