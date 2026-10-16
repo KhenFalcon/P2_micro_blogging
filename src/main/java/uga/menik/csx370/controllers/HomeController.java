@@ -7,7 +7,9 @@ package uga.menik.csx370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -50,6 +52,9 @@ public class HomeController {
         // Following line populates sample data.
         // You should replace it with actual data from the database.
         List<Post> posts = postService.getPosts(error);
+        posts = posts.stream()
+                .sorted(Comparator.comparing(Post::getPostDate).reversed())
+                .collect(Collectors.toList());
         mv.addObject("posts", posts);
 
         // If an error occured, you can set the following property with the
