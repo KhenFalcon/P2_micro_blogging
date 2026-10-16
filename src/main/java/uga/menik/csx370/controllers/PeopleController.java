@@ -7,9 +7,13 @@ package uga.menik.csx370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.List;
 
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,9 +22,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.FollowableUser;
+import uga.menik.csx370.models.User;
 import uga.menik.csx370.services.PeopleService;
 import uga.menik.csx370.services.UserService;
-// import uga.menik.csx370.utility.Utility;
+import uga.menik.csx370.utility.Utility;
 
 /**
  * Handles /people URL and its sub URL paths.
@@ -32,8 +37,9 @@ public class PeopleController {
     // Inject UserService and PeopleService instances.
     // See LoginController.java to see how to do this.
     // Hint: Add a constructor with @Autowired annotation.
-    private final UserService userService;
-    private final PeopleService peopleService;
+
+     private final UserService userService;
+     private final PeopleService peopleService;
 
     @Autowired
     public PeopleController(UserService userService, PeopleService peopleService) {
@@ -57,11 +63,14 @@ public class PeopleController {
         // You should replace it with actual data from the database.
         // Use the PeopleService instance to find followable users.
         // Use UserService to access logged in userId to exclude.
+        //List<FollowableUser> followableUsers = Utility.createSampleFollowableUserList();
+        //mv.addObject("users", followableUsers);
 
-        // List<FollowableUser> followableUsers = Utility.createSampleFollowableUserList();
-        List<FollowableUser> followableUsers = peopleService
-                .getFollowableUsers(userService.getLoggedInUser().getUserId());
-        mv.addObject("users", followableUsers);
+        User loggin_in_user = userService.getLoggedInUser();
+        String userId_toexclude = loggin_in_user.getUserId();
+
+        List<FollowableUser> followable_users = peopleService.getFollowableUsers(userId_toexclude);
+        mv.addObject("users", followable_users);
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
@@ -71,9 +80,7 @@ public class PeopleController {
 
         // Enable the following line if you want to show no content message.
         // Do that if your content list is empty.
-        if (followableUsers.isEmpty()) {
-            mv.addObject("isNoContent", true);
-        }
+        // mv.addObject("isNoContent", true);
         
         return mv;
     }
@@ -95,8 +102,23 @@ public class PeopleController {
         System.out.println("\tuserId: " + userId);
         System.out.println("\tisFollow: " + isFollow);
 
-        // Redirect the user if the comment adding is a success.
-        // return "redirect:/people";
+        User currentUser = userService.getLoggedInUser();
+        int currentUserId = Integer.valueOf(currentUser.getUserId());
+
+        try {
+            boolean successOrNot = peopleService.followUnfollowUser(currentUserId, Integer.valueOf(userId), isFollow);
+
+            if (successOrNot) {
+                // Redirect the user if the comment adding is a success.
+                return "redirect:/people";
+
+
+            }
+        } catch(SQLException e) {
+            e.printStackTrace();
+
+        }
+
 
         // Redirect the user with an error message if there was an error.
         String message = URLEncoder.encode("Failed to (un)follow the user. Please try again.",
