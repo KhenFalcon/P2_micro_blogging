@@ -33,7 +33,7 @@ public class BookmarksService {
      */
     public List<Post> getPosts(String userId) {
         // Write an SQL query to find the users that are not the current user.
-        final String getPostsSql = "SELECT * FROM posts WHERE postId IN (SELECT postId FROM bookmarks WHERE userId = ?)";
+        final String getPostsSql = "SELECT * FROM posts WHERE postId IN (SELECT postId FROM bookmarks WHERE userId = ?) ORDER BY postDate DESC";
 
         // Run the query with a datasource.
         List<Post> posts = new ArrayList<>();
