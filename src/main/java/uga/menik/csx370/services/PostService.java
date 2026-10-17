@@ -21,11 +21,13 @@ import uga.menik.csx370.models.User;
 public class PostService {
     private final DataSource dataSource;
     private final UserService userService;
+    private final BookmarksService bookmarksService;
 
     @Autowired
-    public PostService(DataSource dataSource, UserService userService) {
+    public PostService(DataSource dataSource, UserService userService, BookmarksService bookmarksService) {
         this.dataSource = dataSource;
         this.userService = userService;
+        this.bookmarksService = bookmarksService;
     }
 
      /**
@@ -33,7 +35,7 @@ public class PostService {
      */
     public List<Post> getPosts(String userIdToExclude) {
         // Write an SQL query to find the users that are not the current user.
-        final String getPostsSql = "select * from basicPost";
+        final String getPostsSql = "select * from posts";
 
         // Run the query with a datasource.
         // See UserService.java to see how to inject DataSource instance and
@@ -41,8 +43,6 @@ public class PostService {
         List<Post> posts = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement getPostsStmt = conn.prepareStatement(getPostsSql)) {
-
-            // getUsersStmt.setString(1, ?txtReplacement);
 
             try (ResultSet rs = getPostsStmt.executeQuery()) {
                 // Use the query result to create a list of followable users.
@@ -61,7 +61,8 @@ public class PostService {
                     int heartsCount = 0;
                     int commentsCount = 0;
                     boolean isHearted = false;
-                    boolean isBookmarked = false;
+
+                    boolean isBookmarked = bookmarksService.isBookmarked(postId);
 
                     posts.add(new Post(postId, content, postDate, postUser, heartsCount, commentsCount, isHearted, isBookmarked));
                 }
@@ -78,19 +79,20 @@ public class PostService {
      * TEMP: This function should insert a new post into the database. Uncomment the provided code once the database schema is ready.
      */
     public void createPost(String postText) {
+        if (postText.equals(""))
+            return;
+        
         // Write an SQL query to insert a new post into the database.
-        if (Objects.equals(postText, "")) return;
-        final String createPostSql = "INSERT INTO basicPost (postId, content, postDate, userId) VALUES (?, ?, ?, ?)";
-        // final String createPostSql = "INSERT INTO post (postId, content, postDate, userId, heartsCount, bookmarlsCount, isHearted, isBookmarked) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        final String createPostSql = "INSERT INTO posts (postId, content, postDate, userId, heartsCount, commentsCount, isHearted, isBookmarked) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         String postId = getNewPostId(); // Generate a new post ID based on the current timestamp
         String content = postText;
         String postDate = Timestamp.valueOf(java.time.LocalDateTime.now()).toString(); // Get the current timestamp as a string
         User user = userService.getLoggedInUser(); // Get the logged in user object
-        // int heartsCount = 0;
-        // int commentsCount = 0;
-        // boolean isHearted = false;
-        // boolean isBookmarked = false;
+        int heartsCount = 0;
+        int commentsCount = 0;
+        boolean isHearted = false;
+        boolean isBookmarked = false;
 
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement createPostStmt = conn.prepareStatement(createPostSql)) {
@@ -99,10 +101,10 @@ public class PostService {
             createPostStmt.setString(2, content);
             createPostStmt.setString(3, postDate);
             createPostStmt.setString(4, user.getUserId());
-            // createPostStmt.setInt(5, heartsCount);
-            // createPostStmt.setInt(6, commentsCount);
-            // createPostStmt.setBoolean(7, isHearted);
-            // createPostStmt.setBoolean(8, isBookmarked);
+            createPostStmt.setInt(5, heartsCount);
+            createPostStmt.setInt(6, commentsCount);
+            createPostStmt.setBoolean(7, isHearted);
+            createPostStmt.setBoolean(8, isBookmarked);
 
             createPostStmt.executeUpdate();
         } catch (SQLException e) {
@@ -120,7 +122,7 @@ public class PostService {
      */
     public String getNewPostId() {
         // Write an SQL query to find the maximum postId in the database.
-        final String getMaxPostIdSql = "SELECT MAX(postId) AS maxPostId FROM basicPost";
+        final String getMaxPostIdSql = "SELECT MAX(postId) AS maxPostId FROM posts";
 
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement getMaxPostIdStmt = conn.prepareStatement(getMaxPostIdSql)) {
@@ -131,10 +133,63 @@ public class PostService {
                     return "" + newPostIdInt; // Return the new postId as a string
                 }
             }
+        } catch (NullPointerException e) {
+            // db has no posts (so starting id is 1)
+            return "1";
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        return "-1"; // Default to "-1" if there are no posts in the database
+        return "-1"; // Default to "-1" if there is an error
+    }
+
+    /**
+     * 
+     * @param postId
+     */    
+    public void addBookmark(String postId) {
+        if (postId.equals("-1"))
+            return;
+        
+        // Write an SQL query to insert a new post-bookmark into the database.
+        final String createPostSql = "INSERT INTO bookmarks (userId, postId) VALUES (?, ?)";
+
+        User user = userService.getLoggedInUser(); // Get the logged in user object
+
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement createPostStmt = conn.prepareStatement(createPostSql)) {
+
+            createPostStmt.setString(1, user.getUserId());
+            createPostStmt.setString(2, postId);
+
+            createPostStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 
+     * @param postId
+     */
+    public void removeBookmark(String postId) {
+        if (postId.equals("-1"))
+            return;
+        
+        // Write an SQL query to insert a new post-bookmark into the database.x
+        final String createPostSql = "DELETE FROM bookmarks WHERE userId = ? AND postId = ?";
+
+        User user = userService.getLoggedInUser(); // Get the logged in user object
+
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement createPostStmt = conn.prepareStatement(createPostSql)) {
+
+            createPostStmt.setString(1, user.getUserId());
+            createPostStmt.setString(2, postId);
+
+            createPostStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
