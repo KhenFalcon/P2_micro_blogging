@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import javax.sql.DataSource;
 
@@ -21,11 +20,13 @@ import uga.menik.csx370.models.User;
 public class PostService {
     private final DataSource dataSource;
     private final UserService userService;
+    private final BookmarksService bookmarksService;
 
     @Autowired
-    public PostService(DataSource dataSource, UserService userService) {
+    public PostService(DataSource dataSource, UserService userService, BookmarksService bookmarksService) {
         this.dataSource = dataSource;
         this.userService = userService;
+        this.bookmarksService = bookmarksService;
     }
 
      /**
@@ -41,8 +42,6 @@ public class PostService {
         List<Post> posts = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement getPostsStmt = conn.prepareStatement(getPostsSql)) {
-
-            // getUsersStmt.setString(1, ?txtReplacement);
 
             try (ResultSet rs = getPostsStmt.executeQuery()) {
                 // Use the query result to create a list of followable users.
@@ -61,7 +60,8 @@ public class PostService {
                     int heartsCount = 0;
                     int commentsCount = 0;
                     boolean isHearted = false;
-                    boolean isBookmarked = false;
+
+                    boolean isBookmarked = bookmarksService.isBookmarked(postId);
 
                     posts.add(new Post(postId, content, postDate, postUser, heartsCount, commentsCount, isHearted, isBookmarked));
                 }
@@ -78,8 +78,10 @@ public class PostService {
      * TEMP: This function should insert a new post into the database. Uncomment the provided code once the database schema is ready.
      */
     public void createPost(String postText) {
+        if (postText.equals(""))
+            return;
+        
         // Write an SQL query to insert a new post into the database.
-        if (Objects.equals(postText, "")) return;
         final String createPostSql = "INSERT INTO posts (postId, content, postDate, userId, heartsCount, commentsCount, isHearted, isBookmarked) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         String postId = getNewPostId(); // Generate a new post ID based on the current timestamp
@@ -145,8 +147,10 @@ public class PostService {
      * @param postId
      */    
     public void addBookmark(String postId) {
+        if (postId.equals("-1"))
+            return;
+        
         // Write an SQL query to insert a new post-bookmark into the database.
-        if (Objects.equals(postId, "-1")) return;
         final String createPostSql = "INSERT INTO bookmarks (userId, postId) VALUES (?, ?)";
 
         User user = userService.getLoggedInUser(); // Get the logged in user object
@@ -168,8 +172,10 @@ public class PostService {
      * @param postId
      */
     public void removeBookmark(String postId) {
-        // Write an SQL query to insert a new post-bookmark into the database.
-        if (Objects.equals(postId, "-1")) return;
+        if (postId.equals("-1"))
+            return;
+        
+        // Write an SQL query to insert a new post-bookmark into the database.x
         final String createPostSql = "DELETE FROM bookmarks WHERE userId = ? AND postId = ?";
 
         User user = userService.getLoggedInUser(); // Get the logged in user object

@@ -69,4 +69,36 @@ public class BookmarksService {
         // Replace the following line and return the list you created.
         return posts;
     }
+
+    /**
+     * Checks if the post associated with the provided postId is bookmarked by the current logged-in user.
+     * @param postId
+     * @return true if the provided post (ID) is bookmarked by the current logged-in user, false otherwise.
+     */
+    public boolean isBookmarked(String postId) {
+        if (postId.equals("-1"))
+            return false;
+        
+        // Write an SQL query to find the users that are not the current user.
+        final String getBookmarkSql = "SELECT * FROM bookmarks WHERE userId = ? AND postId = ?";
+
+        String userId = userService.getLoggedInUser().getUserId();
+
+        // Run the query with a datasource.
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement getBookmarkStmt = conn.prepareStatement(getBookmarkSql)) {
+
+            getBookmarkStmt.setString(1, userId);
+            getBookmarkStmt.setString(2, postId);
+
+            try (ResultSet rs = getBookmarkStmt.executeQuery()) {
+                return rs.next(); // Return true/false based on if there is an appropriate entry in bookmarks
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // Replace the following line and return the list you created.
+        return false;
+    }
 }
