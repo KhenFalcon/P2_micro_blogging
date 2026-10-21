@@ -1,0 +1,23 @@
+
+<div class="container mt-4">
+    <h2>Who to Follow</h2>
+    <p>Recommended based on people you follow and shared hashtags in recent posts.</p>
+
+    {{#suggestedUsers}}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">{{firstName}} {{lastName}}</h5>
+
+                <p class="card-text">
+                    Mutual connections: {{mutualConnections}}
+                    <br>
+                    Shared hashtags: {{sharedHashtags}}
+                </p>
+            </div>
+        </div>
+    {{/suggestedUsers}}
+
+    {{^suggestedUsers}}
+        <p>No recommendations available yet. Try following more people or posting with hashtags.</p>
+    {{/suggestedUsers}}
+</div>
