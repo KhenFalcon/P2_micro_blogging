@@ -4,20 +4,42 @@
     <p>Recommended based on people you follow and shared hashtags in recent posts.</p>
 
     {{#suggestedUsers}}
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">{{firstName}} {{lastName}}</h5>
+    <div class="post framed" style="background-color: #e6f4ff;">
+        <img src="{{profileImagePath}}" alt="User avatar">
 
-                <p class="card-text">
-                    Mutual connections: {{mutualConnections}}
-                    <br>
-                    Shared hashtags: {{sharedHashtags}}
-                </p>
+        <div class="post-body">
+            <div class="username">
+                <a href="/profile/{{userId}}">{{firstName}} {{lastName}}</a>
+            </div>
+
+            <div class="post-date">
+                Mutual connections: {{mutualConnections}}
+                <br>
+                Shared hashtags: {{sharedHashtags}}
             </div>
         </div>
+
+        <div class="user-follow">
+            <div class="post-actions">
+                {{^isFollowed}}
+                <form method="get" action="/people/{{userId}}/follow/true">
+                    <button type="submit" class="fa fa-user-plus"
+                            aria-label="Follow user"></button>
+                </form>
+                {{/isFollowed}}
+
+                {{#isFollowed}}
+                <form method="get" action="/people/{{userId}}/follow/false">
+                    <button type="submit" class="fa fa-user-minus"
+                            aria-label="Unfollow user"></button>
+                </form>
+                {{/isFollowed}}
+            </div>
+        </div>
+    </div>
     {{/suggestedUsers}}
 
     {{^suggestedUsers}}
-        <p>No recommendations available yet. Try following more people or posting with hashtags.</p>
+    <p>No recommendations available yet. Try following more people or posting with hashtags.</p>
     {{/suggestedUsers}}
 </div>
