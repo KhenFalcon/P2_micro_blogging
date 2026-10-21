@@ -29,7 +29,7 @@ public class BookmarksService {
     /**
      * Get posts that are bookmarked by the provided user
      * @param userId
-     * @return
+     * @return A list of posts that are bookmarked by the provided user
      */
     public List<Post> getPosts(String userId) {
         // Write an SQL query to find the users that are not the current user.
@@ -100,5 +100,55 @@ public class BookmarksService {
 
         // Replace the following line and return the list you created.
         return false;
+    }
+
+     /**
+     * Adds a bookmark associated with the provided postId for the current logged-in user.
+     * @param postId
+     */    
+    public void addBookmark(String postId) {
+        if (postId.equals("-1"))
+            return;
+        
+        // Write an SQL query to insert a new post-bookmark into the database.
+        final String createPostSql = "INSERT INTO bookmarks (userId, postId) VALUES (?, ?)";
+
+        User user = userService.getLoggedInUser(); // Get the logged in user object
+
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement createPostStmt = conn.prepareStatement(createPostSql)) {
+
+            createPostStmt.setString(1, user.getUserId());
+            createPostStmt.setString(2, postId);
+
+            createPostStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Removes the bookmark associated with the provided postId for the current logged-in user.
+     * @param postId
+     */
+    public void removeBookmark(String postId) {
+        if (postId.equals("-1"))
+            return;
+        
+        // Write an SQL query to insert a new post-bookmark into the database.x
+        final String createPostSql = "DELETE FROM bookmarks WHERE userId = ? AND postId = ?";
+
+        User user = userService.getLoggedInUser(); // Get the logged in user object
+
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement createPostStmt = conn.prepareStatement(createPostSql)) {
+
+            createPostStmt.setString(1, user.getUserId());
+            createPostStmt.setString(2, postId);
+
+            createPostStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.ExpandedPost;
-import uga.menik.csx370.services.PostService;
+import uga.menik.csx370.services.BookmarksService;
 import uga.menik.csx370.utility.Utility;
 
 /**
@@ -28,12 +28,11 @@ import uga.menik.csx370.utility.Utility;
 @Controller
 @RequestMapping("/post")
 public class PostController {
-
-    private final PostService postService;
+    private final BookmarksService bookmarksService;
 
     @Autowired
-    public PostController(PostService postService) {
-        this.postService = postService;
+    public PostController(BookmarksService bookmarksService) {
+        this.bookmarksService = bookmarksService;
     }
 
     /**
@@ -66,7 +65,8 @@ public class PostController {
 
         // Enable the following line if you want to show no content message.
         // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
+        if (posts.isEmpty())
+            mv.addObject("isNoContent", true);
 
         return mv;
     }
@@ -131,9 +131,9 @@ public class PostController {
         try {
             // Redirect the user if the comment adding is a success.
             if (isAdd)
-                postService.addBookmark(postId);
+                bookmarksService.addBookmark(postId);
             else 
-                postService.removeBookmark(postId);
+                bookmarksService.removeBookmark(postId);
             return "redirect:/post/" + postId;
         } catch (Exception e) {
             e.printStackTrace();

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.Post;
@@ -42,7 +43,7 @@ public class BookmarksController {
      * /bookmarks URL itself is handled by this.
      */
     @GetMapping
-    public ModelAndView webpage() {
+    public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
         // posts_page is a mustache template from src/main/resources/templates.
         // ModelAndView class enables initializing one and populating placeholders
         // in the template using Java objects assigned to named properties.
@@ -56,13 +57,12 @@ public class BookmarksController {
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
-        // String errorMessage = "Some error occured!";
-        // mv.addObject("errorMessage", errorMessage);
+        String errorMessage = "Some error occured!";
+        mv.addObject("errorMessage", errorMessage);
 
         // Show no content message if posts is empty
-        if (posts.size() == 0) {
+        if (posts.isEmpty())
             mv.addObject("isNoContent", true);
-        }
 
         return mv;
     }
