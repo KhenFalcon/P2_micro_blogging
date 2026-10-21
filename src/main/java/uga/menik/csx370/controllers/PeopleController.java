@@ -21,6 +21,7 @@ import uga.menik.csx370.models.FollowableUser;
 import uga.menik.csx370.services.PeopleService;
 import uga.menik.csx370.services.UserService;
 import uga.menik.csx370.models.SuggestedUser;
+import java.util.ArrayList;
 // import uga.menik.csx370.utility.Utility;
 
 /**
@@ -49,32 +50,38 @@ public class PeopleController {
      * The value to this parameter can be shown to the user as an error message.
      * See notes in HashtagSearchController.java regarding URL parameters.
      */
+    
     @GetMapping
     public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
         ModelAndView mv = new ModelAndView("people_page");
 
         String currentUserId = userService.getLoggedInUser().getUserId();
 
-        // Existing list of users.
-        List<FollowableUser> followableUsers =
-                peopleService.getFollowableUsers(currentUserId);
-        mv.addObject("users", followableUsers);
-
-        // New list of recommended users.
+        // Get suggested users first.
         List<SuggestedUser> suggestedUsers =
                 peopleService.getSuggestedUsers(currentUserId);
-        mv.addObject("suggestedUsers", suggestedUsers);
 
-        // Existing error message.
+        // Get all other users in a modifiable list.
+        List<FollowableUser> followableUsers =
+                new ArrayList<>(peopleService.getFollowableUsers(currentUserId));
+
+        // Remove suggested users from the regular People list.
+        for (SuggestedUser suggestedUser : suggestedUsers) {
+            followableUsers.removeIf(user ->
+                    user.getUserId().equals(suggestedUser.getUserId()));
+        }
+
+        mv.addObject("suggestedUsers", suggestedUsers);
+        mv.addObject("users", followableUsers);
         mv.addObject("errorMessage", error);
 
-        // Preserve the existing no-content behavior.
-        if (followableUsers.isEmpty()) {
+        if (followableUsers.isEmpty() && suggestedUsers.isEmpty()) {
             mv.addObject("isNoContent", true);
         }
 
         return mv;
     }
+
     
     /**
      * This function handles user follow and unfollow.
