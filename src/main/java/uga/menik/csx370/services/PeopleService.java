@@ -68,8 +68,11 @@ public class PeopleService {
             throw new RuntimeException("Unable to retrieve followable users.", e);
         }
     }
+ 
     private static final Pattern HASHTAG_PATTERN =
             Pattern.compile("(?<![\\p{L}\\p{N}_])#([\\p{L}\\p{N}_]+)");
+
+    private static final int RECENT_POST_LIMIT = 20;
 
     private Set<String> extractHashtags(String content) {
         Set<String> hashtags = new HashSet<>();
@@ -84,26 +87,15 @@ public class PeopleService {
         return hashtags;
     }
 
-    private int intersectionSize(Set<String> first, Set<String> second) {
-        Set<String> smaller = first.size() <= second.size() ? first : second;
-        Set<String> larger = first.size() <= second.size() ? second : first;
-
-        int count = 0;
-
-        for (String value : smaller) {
-            if (larger.contains(value)) {
-                count++;
-            }
-        }
-
-        return count;
-    }
-
     public List<SuggestedUser> getSuggestedUsers(String currentUserId) {
         List<User> candidates = new ArrayList<>();
 
+        // follower ID -> set of users they follow
         Map<String, Set<String>> following = new HashMap<>();
+
+        // user ID -> hashtags from their recent posts
         Map<String, Set<String>> hashtagsByUser = new HashMap<>();
+        Map<String, Integer> postCounts = new HashMap<>();
 
         String usersSql =
                 "SELECT userId, firstName, lastName FROM user WHERE userId <> ?";
@@ -112,11 +104,11 @@ public class PeopleService {
                 "SELECT followerId, followeeId FROM followStatus";
 
         String postsSql =
-                "SELECT userId, content FROM posts";
+                "SELECT userId, content FROM posts ORDER BY postDate DESC";
 
         try (Connection conn = dataSource.getConnection()) {
 
-            // Get every potential candidate except the logged-in user.
+            // 1. Retrieve candidate users, excluding the logged-in user.
             try (PreparedStatement stmt = conn.prepareStatement(usersSql)) {
                 stmt.setString(1, currentUserId);
 
@@ -130,7 +122,7 @@ public class PeopleService {
                 }
             }
 
-            // Build a map of each user's followed accounts.
+            // 2. Build the follow graph.
             try (PreparedStatement stmt = conn.prepareStatement(followsSql);
                  ResultSet rs = stmt.executeQuery()) {
 
@@ -139,21 +131,31 @@ public class PeopleService {
                     String followeeId = rs.getString("followeeId");
 
                     following.computeIfAbsent(
-                            followerId, key -> new HashSet<>()).add(followeeId);
+                            followerId, key -> new HashSet<>())
+                            .add(followeeId);
                 }
             }
 
-            // Extract unique hashtags from each user's posts.
+            // 3. Collect hashtags from each user's 20 most recent posts.
+            // Results are ordered newest first, so later posts are skipped.
             try (PreparedStatement stmt = conn.prepareStatement(postsSql);
                  ResultSet rs = stmt.executeQuery()) {
 
                 while (rs.next()) {
                     String userId = rs.getString("userId");
+                    int count = postCounts.getOrDefault(userId, 0);
+
+                    if (count >= RECENT_POST_LIMIT) {
+                        continue;
+                    }
+
                     String content = rs.getString("content");
 
                     hashtagsByUser.computeIfAbsent(
-                                    userId, key -> new HashSet<>())
+                            userId, key -> new HashSet<>())
                             .addAll(extractHashtags(content));
+
+                    postCounts.put(userId, count + 1);
                 }
             }
 
@@ -170,25 +172,40 @@ public class PeopleService {
 
         List<SuggestedUser> suggestions = new ArrayList<>();
 
+        // 4. Score eligible candidates.
         for (User candidate : candidates) {
             String candidateId = candidate.getUserId();
 
-            // Do not recommend accounts the current user already follows.
+            // Never suggest users already followed.
             if (currentFollowing.contains(candidateId)) {
                 continue;
             }
 
-            Set<String> candidateFollowing =
-                    following.getOrDefault(candidateId, Set.of());
+            // Friends-of-friends:
+            // Count users that the current user follows who also
+            // follow this candidate.
+            int mutualConnections = 0;
 
+            for (String followedUserId : currentFollowing) {
+                Set<String> theirFollowing =
+                        following.getOrDefault(followedUserId, Set.of());
+
+                if (theirFollowing.contains(candidateId)) {
+                    mutualConnections++;
+                }
+            }
+
+            // Shared hashtags from recent posts.
             Set<String> candidateHashtags =
                     hashtagsByUser.getOrDefault(candidateId, Set.of());
 
-            int mutualConnections = intersectionSize(
-                    currentFollowing, candidateFollowing);
+            int sharedHashtags = 0;
 
-            int sharedHashtags = intersectionSize(
-                    currentHashtags, candidateHashtags);
+            for (String hashtag : currentHashtags) {
+                if (candidateHashtags.contains(hashtag)) {
+                    sharedHashtags++;
+                }
+            }
 
             suggestions.add(new SuggestedUser(
                     candidateId,
@@ -198,17 +215,18 @@ public class PeopleService {
                     sharedHashtags));
         }
 
-        // Highest combined score first, then use each component as a tiebreaker.
+        // 5. Rank by total score, then by each individual signal.
         suggestions.sort(
-                Comparator.comparingInt(SuggestedUser::getRecommendationScore)
+                Comparator.comparingInt(
+                                SuggestedUser::getRecommendationScore)
                         .reversed()
                         .thenComparing(
                                 Comparator.comparingInt(
-                                                SuggestedUser::getMutualConnections)
+                                        SuggestedUser::getMutualConnections)
                                         .reversed())
                         .thenComparing(
                                 Comparator.comparingInt(
-                                                SuggestedUser::getSharedHashtags)
+                                        SuggestedUser::getSharedHashtags)
                                         .reversed())
                         .thenComparing(SuggestedUser::getFirstName)
                         .thenComparing(SuggestedUser::getLastName));
