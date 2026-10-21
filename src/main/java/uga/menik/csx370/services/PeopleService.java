@@ -9,9 +9,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
+import java.sql.Timestamp;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import javax.sql.DataSource;
 
@@ -40,41 +42,77 @@ public class PeopleService {
      */
     public List<FollowableUser> getFollowableUsers(String userIdToExclude) {
         // Write an SQL query to find the users that are not the current user.
-        final String getUsersSql = "select * from user where userId != ?";
+        String queryUsers = "SELECT U.userId, U.firstName, U.lastname,"
+                + "(SELECT MAX(P.postDate) FROM posts P WHERE P.userId = U.userId) AS lastActiveDate,"
+                + "(SELECT COUNT(*) FROM followStatus FS WHERE FS.followerId = ? AND FS.followeeId = U.userId) > 0 AS isFollowed"
+                + "FROM user U"
+                + "WHERE userId != ?";
+        List<FollowableUser> followable_users = new ArrayList<>();
 
         // Run the query with a datasource.
         // See UserService.java to see how to inject DataSource instance and
         // use it to run a query.
-        List<FollowableUser> users = new ArrayList<>();
+
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement getUsersStmt = conn.prepareStatement(getUsersSql)) {
+                PreparedStatement registerStmt = conn.prepareStatement(queryUsers)) {
+            // Following lines replace the placeholders 1-4 with values.
+            registerStmt.setInt(1, Integer.valueOf(userIdToExclude));
+            registerStmt.setInt(2, Integer.valueOf(userIdToExclude));
 
-            getUsersStmt.setString(1, userIdToExclude);
+            try (ResultSet resultexceptUserId = registerStmt.executeQuery()) {
+                // returns rows of select query
 
-            try (ResultSet rs = getUsersStmt.executeQuery()) {
-                // Use the query result to create a list of followable users.
-                // See UserService.java to see how to access rows and their attributes
-                // from the query result.
-                // Check the following createSampleFollowableUserList function to see 
-                // how to create a list of FollowableUsers.
-                while (rs.next()) {
-                    String userId = rs.getString("userId");
-                    String firstName = rs.getString("firstName");
-                    String lastName = rs.getString("lastName");
+                while (resultexceptUserId.next()) {
+                    String userId = resultexceptUserId.getString("userId");
+                    String firstName = resultexceptUserId.getString("firstName");
+                    String lastName = resultexceptUserId.getString("lastName");
+                    boolean isFollowed = resultexceptUserId.getBoolean("isFollowed");
 
-                    // TODO: Placeholder values
-                    boolean isFollowed = false;
-                    String lastActiveDate = "N/A";
-                    
-                    users.add(new FollowableUser(userId, firstName, lastName, isFollowed, lastActiveDate));
+                    Timestamp sqlLastActiveDate = resultexceptUserId.getTimestamp("lastActiveDate");
+                    String lastActiveDate = "";
+                    if (sqlLastActiveDate != null) {
+                        // specifying the format we want postDate to be in 
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, yyyy, hh:mm a",
+                                Locale.ENGLISH);
+
+                        // parsing postDate (current time of comment) to be in the format of formatter
+                        lastActiveDate = sqlLastActiveDate.toLocalDateTime().format(formatter);
+                    }
+
+                    FollowableUser user = new FollowableUser(userId, firstName, lastName, isFollowed, lastActiveDate);
+                    followable_users.add(user);
                 }
             }
+            return followable_users;
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        // Replace the following line and return the list you created.
-        return users;
+        return followable_users;
     }
 
+    /**
+     * Does the logic to follow or unfollow a specifc user 
+     */
+    public boolean followUnfollowUser(int currentUserId, int targetUserId, boolean isFollowing) throws SQLException{
+        String following = "INSERT INTO followStatus (followerId, followeeId) VALUES (?, ?)";
+        String unfollow = "DELETE FROM followStatus WHERE followerId = ? AND followeeId = ?";
+
+        String followUnfollow;
+        if (isFollowing) {
+            followUnfollow = following;
+        } else {
+            followUnfollow = unfollow;
+        }
+
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement registerStmt = conn.prepareStatement(followUnfollow)) {
+            registerStmt.setInt(1, currentUserId);
+            registerStmt.setInt(2, targetUserId);
+
+            int rowsAffected = registerStmt.executeUpdate();
+            return rowsAffected > 0; 
+        }
+    }
 }

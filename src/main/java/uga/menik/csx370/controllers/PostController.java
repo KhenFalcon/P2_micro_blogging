@@ -7,6 +7,7 @@ package uga.menik.csx370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.ExpandedPost;
 import uga.menik.csx370.services.BookmarksService;
+import uga.menik.csx370.services.PostService;
+import uga.menik.csx370.services.UserService;
 import uga.menik.csx370.utility.Utility;
 
 /**
@@ -29,10 +32,14 @@ import uga.menik.csx370.utility.Utility;
 @RequestMapping("/post")
 public class PostController {
     private final BookmarksService bookmarksService;
+    private final PostService postService;
+    private final UserService userService;
 
     @Autowired
-    public PostController(BookmarksService bookmarksService) {
+    public PostController(BookmarksService bookmarksService, PostService postService, UserService userService) {
         this.bookmarksService = bookmarksService;
+        this.postService = postService;
+        this.userService = userService;
     }
 
     /**
@@ -54,8 +61,15 @@ public class PostController {
 
         // Following line populates sample data.
         // You should replace it with actual data from the database.
-        List<ExpandedPost> posts = Utility.createSampleExpandedPostWithComments();
-        mv.addObject("posts", posts);
+        try {
+            ExpandedPost expandedPost  = postService.getExpandedPost(Integer.parseInt(postId));
+
+            System.out.println("DEBUG: expandedPost = " + expandedPost);
+            mv.addObject("post", expandedPost);
+            mv.addObject("postId", postId);
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
@@ -106,8 +120,17 @@ public class PostController {
         System.out.println("\tpostId: " + postId);
         System.out.println("\tisAdd: " + isAdd);
 
-        // Redirect the user if the comment adding is a success.
-        // return "redirect:/post/" + postId;
+        try {
+            boolean successOrNot = postService.addRemoveHeart(isAdd, Integer.parseInt(postId));
+            
+            if (successOrNot) {
+                // Redirect the user if the comment adding is a success.
+                return "redirect:" + postId;
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // Redirect the user with an error message if there was an error.
         String message = URLEncoder.encode("Failed to (un)like the post. Please try again.",
