@@ -93,7 +93,7 @@ public class PostService {
      * @param postId - The postId of the desired expandedPost
      * @return An Expanded Post object or null if something goes wrong.
      */
-    public ExpandedPost getExpandedPost(int postId) {
+    public ExpandedPost getExpandedPost(String postId) {
         // Prep Query - getting the corresponding post according to postId
         String expandpost = "SELECT * FROM posts P, user U WHERE P.userId = U.userId AND P.postId = ?";
 
@@ -107,7 +107,7 @@ public class PostService {
                 PreparedStatement registerStmt = conn.prepareStatement(expandpost)) {
 
             // Insert Query Params
-            registerStmt.setInt(1, postId);
+            registerStmt.setString(1, postId);
 
             // Send Query
             try (ResultSet result = registerStmt.executeQuery()) {
@@ -161,16 +161,10 @@ public class PostService {
      * @returns True if the action was a success, false otherwise.
      */
     public boolean addRemoveHeart(boolean isAdd, int postId) {
-        String addHeart = "UPDATE posts SET isHearted = true, heartsCount = heartsCount + 1 WHERE postId = ?";
-        String removeHeart = "UPDATE posts SET isHearted = false, heartsCount = heartsCount - 1 WHERE postId = ?";
+        final String addHeart = "UPDATE posts SET isHearted = true, heartsCount = heartsCount + 1 WHERE postId = ?";
+        final String removeHeart = "UPDATE posts SET isHearted = false, heartsCount = heartsCount - 1 WHERE postId = ?";
 
-        String heartQuery;
-
-        if (isAdd) {
-            heartQuery = addHeart;
-        } else {
-            heartQuery = removeHeart;
-        }
+        String heartQuery = isAdd ? addHeart : removeHeart;
 
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement registerStmt = conn.prepareStatement(heartQuery)) {

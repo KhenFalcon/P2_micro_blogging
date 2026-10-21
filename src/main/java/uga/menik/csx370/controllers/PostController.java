@@ -7,8 +7,7 @@ package uga.menik.csx370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
-import java.util.List;
+import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -22,8 +21,6 @@ import org.springframework.web.servlet.ModelAndView;
 import uga.menik.csx370.models.ExpandedPost;
 import uga.menik.csx370.services.BookmarksService;
 import uga.menik.csx370.services.PostService;
-import uga.menik.csx370.services.UserService;
-import uga.menik.csx370.utility.Utility;
 
 /**
  * Handles /post URL and its sub urls.
@@ -33,13 +30,11 @@ import uga.menik.csx370.utility.Utility;
 public class PostController {
     private final BookmarksService bookmarksService;
     private final PostService postService;
-    private final UserService userService;
 
     @Autowired
-    public PostController(BookmarksService bookmarksService, PostService postService, UserService userService) {
+    public PostController(BookmarksService bookmarksService, PostService postService) {
         this.bookmarksService = bookmarksService;
         this.postService = postService;
-        this.userService = userService;
     }
 
     /**
@@ -61,15 +56,14 @@ public class PostController {
 
         // Following line populates sample data.
         // You should replace it with actual data from the database.
-        try {
-            ExpandedPost expandedPost  = postService.getExpandedPost(Integer.parseInt(postId));
+        ExpandedPost expandedPost = postService.getExpandedPost(postId);
 
-            System.out.println("DEBUG: expandedPost = " + expandedPost);
-            mv.addObject("post", expandedPost);
-            mv.addObject("postId", postId);
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
+        System.out.println("DEBUG: expandedPost = " + expandedPost);
+        mv.addObject("posts", expandedPost);
+        // mv.addObject("posts", expandedPost == null
+        //         ? Collections.emptyList()
+        //         : Collections.singletonList(expandedPost));
+        mv.addObject("postId", postId);
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
@@ -79,7 +73,7 @@ public class PostController {
 
         // Enable the following line if you want to show no content message.
         // Do that if your content list is empty.
-        if (posts.isEmpty())
+        if (expandedPost == null)
             mv.addObject("isNoContent", true);
 
         return mv;
