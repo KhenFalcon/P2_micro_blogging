@@ -64,7 +64,8 @@ public class HomeController {
 
         // Enable the following line if you want to show no content message.
         // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
+        if(posts.isEmpty())
+            mv.addObject("isNoContent", true); 
 
         return mv;
     }
