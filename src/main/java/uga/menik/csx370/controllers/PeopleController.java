@@ -7,6 +7,7 @@ package uga.menik.csx370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,7 @@ public class PeopleController {
     // Inject UserService and PeopleService instances.
     // See LoginController.java to see how to do this.
     // Hint: Add a constructor with @Autowired annotation.
+
     private final UserService userService;
     private final PeopleService peopleService;
 
@@ -58,9 +60,8 @@ public class PeopleController {
         // Use the PeopleService instance to find followable users.
         // Use UserService to access logged in userId to exclude.
 
-        // List<FollowableUser> followableUsers = Utility.createSampleFollowableUserList();
-        List<FollowableUser> followableUsers = peopleService
-                .getFollowableUsers(userService.getLoggedInUser().getUserId());
+        String userIdToExclude = userService.getLoggedInUser().getUserId(); // the logged-in user (You can't follow yourself)
+        List<FollowableUser> followableUsers = peopleService.getFollowableUsers(userIdToExclude);
         mv.addObject("users", followableUsers);
 
         // If an error occured, you can set the following property with the
@@ -95,8 +96,17 @@ public class PeopleController {
         System.out.println("\tuserId: " + userId);
         System.out.println("\tisFollow: " + isFollow);
 
-        // Redirect the user if the comment adding is a success.
-        // return "redirect:/people";
+        try {
+            String loggedInUserId = userService.getLoggedInUser().getUserId();
+            
+            boolean isSuccess = peopleService.followUnfollowUser(Integer.valueOf(loggedInUserId), Integer.valueOf(userId), isFollow);
+            if (isSuccess) {
+                // Redirect the user if the comment adding is a success.
+                return "redirect:/people";
+            }
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
 
         // Redirect the user with an error message if there was an error.
         String message = URLEncoder.encode("Failed to (un)follow the user. Please try again.",
