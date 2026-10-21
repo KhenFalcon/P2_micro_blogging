@@ -10,10 +10,12 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import uga.menik.csx370.models.Post;
 import uga.menik.csx370.models.User;
 
+@Service 
 public class HashtagService {
     private final DataSource dataSource;
     private final UserService userService;
@@ -32,6 +34,10 @@ public class HashtagService {
      * 
      * Valid Examples: "#Test" "#Fireworks" "#101Dalmations"
      * Invalid Examples: "Test" "Fireworks" "#101 Dalmations"
+     * 
+     * Warning: If there is a hashtag that is the starting substring of another hashtag, then 
+     * searching for the first will return posts with both hashtags. (Example: Searching for 
+     * "#bird" will return both posts that have either "#bird" or "#birdhouse")
      * 
      * @param hashtages - A single string or array of strings representing hashtags to search for
      * @return A list of posts that contain any of the specified hashtags
@@ -69,6 +75,13 @@ public class HashtagService {
         return posts;
     }
 
+    // ---  Private Methods -----------------------------------------------------------------------
+
+    /**
+     * Runs a SQL to get posts that are LIKE (contains) a single hashtag. 
+     * @param hashtag
+     * @return A list of posts that contain the specified hashtag
+     */
     private List<Post> getPosts(String hashtag) {
         // Write an SQL query to find the users that are not the current user.
         final String getPostsSql = "SELECT * FROM posts WHERE content LIKE ?";

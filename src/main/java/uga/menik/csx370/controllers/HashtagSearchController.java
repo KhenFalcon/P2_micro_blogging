@@ -5,7 +5,9 @@ This is a project developed by Dr. Menik to give the students an opportunity to 
 */
 package uga.menik.csx370.controllers;
 
+import java.util.InputMismatchException;
 import java.util.List;
+import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -40,27 +42,82 @@ public class HashtagSearchController {
      * Note: the value of the hashtags is URL encoded.
      */
     @GetMapping
-    public ModelAndView webpage(@RequestParam(name = "hashtags") String hashtags) {
+    public ModelAndView webpage(@RequestParam(name = "error", required = false) String error,
+            @RequestParam(name = "hashtags") String hashtags) {
         System.out.println("User is searching: " + hashtags);
 
         // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("posts_page");
 
+        // System.out.println("Hashtag Search: " + hashtags);
+        String[] h = parseHashtags(hashtags);
+        // System.out.println("Parsed Hashtag Search: " + Arrays.deepToString(h));
+
         // Following line populates sample data.
         // You should replace it with actual data from the database.
-        List<Post> posts = hashtagService.getPostsWithAny(hashtags);
+        List<Post> posts = hashtagService.getPostsWithAny(h);
         mv.addObject("posts", posts);
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
-        // String errorMessage = "Some error occured!";
-        // mv.addObject("errorMessage", errorMessage);
+        String errorMessage = "Some error occured!";
+        mv.addObject("errorMessage", errorMessage);
 
         // Enable the following line if you want to show no content message.
         // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
-        
+        if (posts.isEmpty())
+            mv.addObject("isNoContent", true);
+
         return mv;
     }
     
+    // --- Private Methods ------------------------------------------------------------------------
+
+    /**
+     * Parses a single String with potentially multiple hashtags into a String[], where each 
+     * element is a String object with a leading "#" and no whitespaces (",", ".", or " ").
+     * 
+     * @param hashtags
+     * @return A String[] of parsed hashtags.
+     */
+    private String[] parseHashtags(String hashtags) {
+        if (hashtags.charAt(0) != '#')
+            throw new InputMismatchException("Hashtag does not start with '#'");
+
+        ArrayList<String> parsedHashtags = new ArrayList<>();
+
+        int start = 0;
+        int nextHashtag = hashtags.indexOf('#', 1);
+        String h;
+        while (nextHashtag != -1) {
+            h = hashtags.substring(start, nextHashtag);
+            h = format(h);
+            parsedHashtags.add(h);
+
+            start = nextHashtag;
+            nextHashtag = hashtags.indexOf('#', start + 1);
+        }
+        h = hashtags.substring(start);
+        h = format(h);
+        parsedHashtags.add(h);
+
+        // System.out.println("\tInner Hashtag-Parse Results: " + parsedHashtags.toString());
+
+        return parsedHashtags.toArray(new String[0]);
+    }
+
+    /**
+     * Removes the following whitespace: " ", ",", and "."
+     * @param hashtag
+     * @return the given string without the above listed whitespace.
+     */
+    private String format(String hashtag) {
+        // System.out.print("\t\t Formatting String: " + hashtag + " -> ");
+        hashtag = hashtag.replace(" ", "");
+        hashtag = hashtag.replace(",", "");
+        hashtag = hashtag.replace(".", "");
+
+        // System.out.println(hashtag);
+        return hashtag;
+    }
 }
