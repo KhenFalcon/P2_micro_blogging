@@ -121,7 +121,7 @@ public class PeopleService {
                 }
             }
 
-            // 2. Build the follow graph.
+            // Build the follow graph
             try (PreparedStatement stmt = conn.prepareStatement(followsSql);
                  ResultSet rs = stmt.executeQuery()) {
 
@@ -135,8 +135,8 @@ public class PeopleService {
                 }
             }
 
-            // 3. Collect hashtags from each user's 20 most recent posts.
-            // Results are ordered newest first, so later posts are skipped.
+            // Collect hashtags from each user's 20 most recent posts
+            // Results are ordered newest first, so later posts are skipped
             try (PreparedStatement stmt = conn.prepareStatement(postsSql);
                  ResultSet rs = stmt.executeQuery()) {
 
@@ -171,7 +171,7 @@ public class PeopleService {
 
         List<SuggestedUser> suggestions = new ArrayList<>();
 
-        // 4. Score eligible candidates.
+        // Score eligible candidates
         for (User candidate : candidates) {
             String candidateId = candidate.getUserId();
 
@@ -181,8 +181,7 @@ public class PeopleService {
             }
 
             // Friends-of-friends:
-            // Count users that the current user follows who also
-            // follow this candidate.
+            // Count users that the current user follows who also follow this candidate
             int mutualConnections = 0;
 
             for (String followedUserId : currentFollowing) {
@@ -206,6 +205,10 @@ public class PeopleService {
                 }
             }
 
+            // Skip users with no recommendation signals
+            if (mutualConnections == 0 && sharedHashtags == 0) {
+                continue;
+            }
             suggestions.add(new SuggestedUser(
                     candidateId,
                     candidate.getFirstName(),
@@ -214,7 +217,7 @@ public class PeopleService {
                     sharedHashtags));
         }
 
-        // 5. Rank by total score, then by each individual signal.
+        // Rank by total score, then by each individual signal
         suggestions.sort(
                 Comparator.comparingInt(
                                 SuggestedUser::getRecommendationScore)
