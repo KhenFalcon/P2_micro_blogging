@@ -57,7 +57,7 @@ public class BookmarksController {
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
-        String errorMessage = "Some error occured!";
+        String errorMessage = error; // Corrected from "Some error occured!" (Always forced it to appear)
         mv.addObject("errorMessage", errorMessage);
 
         // Show no content message if posts is empty
