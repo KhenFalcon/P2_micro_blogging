@@ -9,8 +9,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -22,9 +20,18 @@ import org.springframework.stereotype.Service;
 
 import uga.menik.csx370.models.FollowableUser;
 
-/**
- * This service contains people related functions.
- */
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import uga.menik.csx370.models.SuggestedUser;
+import uga.menik.csx370.models.User;
+
 @Service
 public class PeopleService {
 
@@ -35,84 +42,177 @@ public class PeopleService {
         this.dataSource = dataSource;
     }
 
-    /**
-     * This function should query and return all users that 
-     * are followable. The list should not contain the user 
-     * with id userIdToExclude.
-     */
     public List<FollowableUser> getFollowableUsers(String userIdToExclude) {
-        // Write an SQL query to find the users that are not the current user.
-        String queryUsers = "SELECT U.userId, U.firstName, U.lastname, "
-                + "(SELECT MAX(P.postDate) FROM posts P WHERE P.userId = U.userId) AS lastActiveDate, "
-                + "(SELECT COUNT(*) FROM followStatus FS WHERE FS.followerId = ? AND FS.followeeId = U.userId) > 0 AS isFollowed "
-                + "FROM user U "
-                + "WHERE userId != ?";
-        List<FollowableUser> followable_users = new ArrayList<>();
+        List<FollowableUser> followableUsers = new ArrayList<>();
 
-        // Run the query with a datasource.
-        // See UserService.java to see how to inject DataSource instance and
-        // use it to run a query.
+        String sql = "SELECT userId, firstName, lastName FROM user WHERE userId <> ?";
 
         try (Connection conn = dataSource.getConnection();
-                PreparedStatement registerStmt = conn.prepareStatement(queryUsers)) {
-            // Following lines replace the placeholders 1-4 with values.
-            registerStmt.setInt(1, Integer.valueOf(userIdToExclude));
-            registerStmt.setInt(2, Integer.valueOf(userIdToExclude));
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            try (ResultSet resultexceptUserId = registerStmt.executeQuery()) {
-                // returns rows of select query
+            pstmt.setString(1, userIdToExclude);
 
-                while (resultexceptUserId.next()) {
-                    String userId = resultexceptUserId.getString("userId");
-                    String firstName = resultexceptUserId.getString("firstName");
-                    String lastName = resultexceptUserId.getString("lastName");
-                    boolean isFollowed = resultexceptUserId.getBoolean("isFollowed");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String userId = rs.getString("userId");
+                    String firstName = rs.getString("firstName");
+                    String lastName = rs.getString("lastName");
 
-                    Timestamp sqlLastActiveDate = resultexceptUserId.getTimestamp("lastActiveDate");
-                    String lastActiveDate = "";
-                    if (sqlLastActiveDate != null) {
-                        // specifying the format we want postDate to be in 
-                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, yyyy, hh:mm a",
-                                Locale.ENGLISH);
-
-                        // parsing postDate (current time of comment) to be in the format of formatter
-                        lastActiveDate = sqlLastActiveDate.toLocalDateTime().format(formatter);
-                    }
-
-                    FollowableUser user = new FollowableUser(userId, firstName, lastName, isFollowed, lastActiveDate);
-                    followable_users.add(user);
+                    followableUsers.add(new FollowableUser(
+                            userId, firstName, lastName, false, ""));
                 }
             }
-            return followable_users;
+            return followableUsers;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Unable to retrieve followable users.", e);
+        }
+    }
+    private static final Pattern HASHTAG_PATTERN =
+            Pattern.compile("(?<![\\p{L}\\p{N}_])#([\\p{L}\\p{N}_]+)");
+
+    private Set<String> extractHashtags(String content) {
+        Set<String> hashtags = new HashSet<>();
+
+        Matcher matcher = HASHTAG_PATTERN.matcher(
+                content == null ? "" : content);
+
+        while (matcher.find()) {
+            hashtags.add(matcher.group(1).toLowerCase(Locale.ROOT));
         }
 
-        return followable_users;
+        return hashtags;
     }
 
-    /**
-     * Does the logic to follow or unfollow a specifc user 
-     */
-    public boolean followUnfollowUser(int currentUserId, int targetUserId, boolean isFollowing) throws SQLException{
-        String following = "INSERT INTO followStatus (followerId, followeeId) VALUES (?, ?)";
-        String unfollow = "DELETE FROM followStatus WHERE followerId = ? AND followeeId = ?";
+    private int intersectionSize(Set<String> first, Set<String> second) {
+        Set<String> smaller = first.size() <= second.size() ? first : second;
+        Set<String> larger = first.size() <= second.size() ? second : first;
 
-        String followUnfollow;
-        if (isFollowing) {
-            followUnfollow = following;
-        } else {
-            followUnfollow = unfollow;
+        int count = 0;
+
+        for (String value : smaller) {
+            if (larger.contains(value)) {
+                count++;
+            }
         }
 
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement registerStmt = conn.prepareStatement(followUnfollow)) {
-            registerStmt.setInt(1, currentUserId);
-            registerStmt.setInt(2, targetUserId);
+        return count;
+    }
 
-            int rowsAffected = registerStmt.executeUpdate();
-            return rowsAffected > 0; 
+    public List<SuggestedUser> getSuggestedUsers(String currentUserId) {
+        List<User> candidates = new ArrayList<>();
+
+        Map<String, Set<String>> following = new HashMap<>();
+        Map<String, Set<String>> hashtagsByUser = new HashMap<>();
+
+        String usersSql =
+                "SELECT userId, firstName, lastName FROM user WHERE userId <> ?";
+
+        String followsSql =
+                "SELECT followerId, followeeId FROM followStatus";
+
+        String postsSql =
+                "SELECT userId, content FROM posts";
+
+        try (Connection conn = dataSource.getConnection()) {
+
+            // Get every potential candidate except the logged-in user.
+            try (PreparedStatement stmt = conn.prepareStatement(usersSql)) {
+                stmt.setString(1, currentUserId);
+
+                try (ResultSet rs = stmt.executeQuery()) {
+                    while (rs.next()) {
+                        candidates.add(new User(
+                                rs.getString("userId"),
+                                rs.getString("firstName"),
+                                rs.getString("lastName")));
+                    }
+                }
+            }
+
+            // Build a map of each user's followed accounts.
+            try (PreparedStatement stmt = conn.prepareStatement(followsSql);
+                 ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    String followerId = rs.getString("followerId");
+                    String followeeId = rs.getString("followeeId");
+
+                    following.computeIfAbsent(
+                            followerId, key -> new HashSet<>()).add(followeeId);
+                }
+            }
+
+            // Extract unique hashtags from each user's posts.
+            try (PreparedStatement stmt = conn.prepareStatement(postsSql);
+                 ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    String userId = rs.getString("userId");
+                    String content = rs.getString("content");
+
+                    hashtagsByUser.computeIfAbsent(
+                                    userId, key -> new HashSet<>())
+                            .addAll(extractHashtags(content));
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Unable to retrieve suggested users.", e);
         }
+
+        Set<String> currentFollowing =
+                following.getOrDefault(currentUserId, Set.of());
+
+        Set<String> currentHashtags =
+                hashtagsByUser.getOrDefault(currentUserId, Set.of());
+
+        List<SuggestedUser> suggestions = new ArrayList<>();
+
+        for (User candidate : candidates) {
+            String candidateId = candidate.getUserId();
+
+            // Do not recommend accounts the current user already follows.
+            if (currentFollowing.contains(candidateId)) {
+                continue;
+            }
+
+            Set<String> candidateFollowing =
+                    following.getOrDefault(candidateId, Set.of());
+
+            Set<String> candidateHashtags =
+                    hashtagsByUser.getOrDefault(candidateId, Set.of());
+
+            int mutualConnections = intersectionSize(
+                    currentFollowing, candidateFollowing);
+
+            int sharedHashtags = intersectionSize(
+                    currentHashtags, candidateHashtags);
+
+            suggestions.add(new SuggestedUser(
+                    candidateId,
+                    candidate.getFirstName(),
+                    candidate.getLastName(),
+                    mutualConnections,
+                    sharedHashtags));
+        }
+
+        // Highest combined score first, then use each component as a tiebreaker.
+        suggestions.sort(
+                Comparator.comparingInt(SuggestedUser::getRecommendationScore)
+                        .reversed()
+                        .thenComparing(
+                                Comparator.comparingInt(
+                                                SuggestedUser::getMutualConnections)
+                                        .reversed())
+                        .thenComparing(
+                                Comparator.comparingInt(
+                                                SuggestedUser::getSharedHashtags)
+                                        .reversed())
+                        .thenComparing(SuggestedUser::getFirstName)
+                        .thenComparing(SuggestedUser::getLastName));
+
+        return suggestions;
     }
 }
