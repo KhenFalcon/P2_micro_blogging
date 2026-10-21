@@ -160,7 +160,7 @@ public class PostService {
      * @param postId - The postId of the post to (un)like.
      * @returns True if the action was a success, false otherwise.
      */
-    public boolean addRemoveHeart(boolean isAdd, int postId) {
+    public boolean addRemoveHeart(boolean isAdd, String postId) {
         final String addHeart = "UPDATE posts SET isHearted = true, heartsCount = heartsCount + 1 WHERE postId = ?";
         final String removeHeart = "UPDATE posts SET isHearted = false, heartsCount = heartsCount - 1 WHERE postId = ?";
 
@@ -168,7 +168,7 @@ public class PostService {
 
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement registerStmt = conn.prepareStatement(heartQuery)) {
-            registerStmt.setInt(1, postId);
+            registerStmt.setString(1, postId);
 
             int rowsAffected = registerStmt.executeUpdate();
             return rowsAffected > 0;

@@ -7,7 +7,6 @@ package uga.menik.csx370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -60,9 +59,6 @@ public class PostController {
 
         System.out.println("DEBUG: expandedPost = " + expandedPost);
         mv.addObject("posts", expandedPost);
-        // mv.addObject("posts", expandedPost == null
-        //         ? Collections.emptyList()
-        //         : Collections.singletonList(expandedPost));
         mv.addObject("postId", postId);
 
         // If an error occured, you can set the following property with the
@@ -115,11 +111,11 @@ public class PostController {
         System.out.println("\tisAdd: " + isAdd);
 
         try {
-            boolean successOrNot = postService.addRemoveHeart(isAdd, Integer.parseInt(postId));
+            boolean successOrNot = postService.addRemoveHeart(isAdd, postId);
             
             if (successOrNot) {
                 // Redirect the user if the comment adding is a success.
-                return "redirect:" + postId;
+                return "redirect:/post/" + postId;
 
             }
         } catch (Exception e) {
@@ -161,5 +157,4 @@ public class PostController {
             return "redirect:/post/" + postId + "?error=" + message;   
         }
     }
-
 }
