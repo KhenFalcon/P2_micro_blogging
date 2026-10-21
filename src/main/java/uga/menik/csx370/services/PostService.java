@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import javax.sql.DataSource;
 
@@ -141,55 +140,5 @@ public class PostService {
         }
 
         return "-1"; // Default to "-1" if there is an error
-    }
-
-    /**
-     * 
-     * @param postId
-     */    
-    public void addBookmark(String postId) {
-        if (postId.equals("-1"))
-            return;
-        
-        // Write an SQL query to insert a new post-bookmark into the database.
-        final String createPostSql = "INSERT INTO bookmarks (userId, postId) VALUES (?, ?)";
-
-        User user = userService.getLoggedInUser(); // Get the logged in user object
-
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement createPostStmt = conn.prepareStatement(createPostSql)) {
-
-            createPostStmt.setString(1, user.getUserId());
-            createPostStmt.setString(2, postId);
-
-            createPostStmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 
-     * @param postId
-     */
-    public void removeBookmark(String postId) {
-        if (postId.equals("-1"))
-            return;
-        
-        // Write an SQL query to insert a new post-bookmark into the database.x
-        final String createPostSql = "DELETE FROM bookmarks WHERE userId = ? AND postId = ?";
-
-        User user = userService.getLoggedInUser(); // Get the logged in user object
-
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement createPostStmt = conn.prepareStatement(createPostSql)) {
-
-            createPostStmt.setString(1, user.getUserId());
-            createPostStmt.setString(2, postId);
-
-            createPostStmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
 }

@@ -16,7 +16,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.Post;
 import uga.menik.csx370.services.HashtagService;
-import uga.menik.csx370.utility.Utility;
 
 /**
  * Handles /hashtagsearch URL and possibly others.

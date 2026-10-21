@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.Post;
-import uga.menik.csx370.models.User;
 import uga.menik.csx370.services.PostService;
 
 /**
