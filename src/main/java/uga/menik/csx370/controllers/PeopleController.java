@@ -20,6 +20,7 @@ import org.springframework.web.servlet.ModelAndView;
 import uga.menik.csx370.models.FollowableUser;
 import uga.menik.csx370.services.PeopleService;
 import uga.menik.csx370.services.UserService;
+import uga.menik.csx370.models.SuggestedUser;
 // import uga.menik.csx370.utility.Utility;
 
 /**
@@ -50,34 +51,31 @@ public class PeopleController {
      */
     @GetMapping
     public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
-        // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("people_page");
 
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
-        // Use the PeopleService instance to find followable users.
-        // Use UserService to access logged in userId to exclude.
+        String currentUserId = userService.getLoggedInUser().getUserId();
 
-        // List<FollowableUser> followableUsers = Utility.createSampleFollowableUserList();
-        List<FollowableUser> followableUsers = peopleService
-                .getFollowableUsers(userService.getLoggedInUser().getUserId());
+        // Existing list of users.
+        List<FollowableUser> followableUsers =
+                peopleService.getFollowableUsers(currentUserId);
         mv.addObject("users", followableUsers);
 
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
-        // An error message can be optionally specified with a url query parameter too.
-        String errorMessage = error;
-        mv.addObject("errorMessage", errorMessage);
+        // New list of recommended users.
+        List<SuggestedUser> suggestedUsers =
+                peopleService.getSuggestedUsers(currentUserId);
+        mv.addObject("suggestedUsers", suggestedUsers);
 
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
+        // Existing error message.
+        mv.addObject("errorMessage", error);
+
+        // Preserve the existing no-content behavior.
         if (followableUsers.isEmpty()) {
             mv.addObject("isNoContent", true);
         }
-        
+
         return mv;
     }
-
+    
     /**
      * This function handles user follow and unfollow.
      * Note the URL has parameters defined as variables ie: {userId} and {isFollow}.
