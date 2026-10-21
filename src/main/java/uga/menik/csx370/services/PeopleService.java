@@ -42,10 +42,10 @@ public class PeopleService {
      */
     public List<FollowableUser> getFollowableUsers(String userIdToExclude) {
         // Write an SQL query to find the users that are not the current user.
-        String queryUsers = "SELECT U.userId, U.firstName, U.lastname,"
-                + "(SELECT MAX(P.postDate) FROM posts P WHERE P.userId = U.userId) AS lastActiveDate,"
-                + "(SELECT COUNT(*) FROM followStatus FS WHERE FS.followerId = ? AND FS.followeeId = U.userId) > 0 AS isFollowed"
-                + "FROM user U"
+        String queryUsers = "SELECT U.userId, U.firstName, U.lastname, "
+                + "(SELECT MAX(P.postDate) FROM posts P WHERE P.userId = U.userId) AS lastActiveDate, "
+                + "(SELECT COUNT(*) FROM followStatus FS WHERE FS.followerId = ? AND FS.followeeId = U.userId) > 0 AS isFollowed "
+                + "FROM user U "
                 + "WHERE userId != ?";
         List<FollowableUser> followable_users = new ArrayList<>();
 
