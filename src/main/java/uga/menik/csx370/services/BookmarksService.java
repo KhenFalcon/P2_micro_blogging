@@ -19,11 +19,13 @@ import uga.menik.csx370.models.User;
 public class BookmarksService {
     private final DataSource dataSource;
     private final UserService userService;
+    private final HeartsService heartsService;
 
     @Autowired
-    public BookmarksService(DataSource dataSource, UserService userService) {
+    public BookmarksService(DataSource dataSource, UserService userService, HeartsService heartsService) {
         this.dataSource = dataSource;
         this.userService = userService;
+        this.heartsService = heartsService;
     }
 
     /**
@@ -50,12 +52,9 @@ public class BookmarksService {
                     String content = rs.getString("content");
                     String postDate = rs.getString("postDate");
                     User postUser = userService.getUser(postUserId); // Get the user object for the post's user
-
-                    // TODO: Placeholder values
-                    int heartsCount = 0;
-                    int commentsCount = 0;
-                    boolean isHearted = false;
-
+                    int heartsCount = rs.getInt("heartsCount");
+                    int commentsCount = rs.getInt("commentsCount");
+                    boolean isHearted = heartsService.isHearted(postId);
                     boolean isBookmarked = true;
 
                     posts.add(new Post(postId, content, postDate, postUser, heartsCount, commentsCount, isHearted,
