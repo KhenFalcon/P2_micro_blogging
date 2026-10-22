@@ -20,12 +20,14 @@ public class HashtagService {
     private final DataSource dataSource;
     private final UserService userService;
     private final BookmarksService bookmarksService;
+    private final HeartsService heartsService;
 
     @Autowired
-    public HashtagService(DataSource dataSource, UserService userService, BookmarksService bookmarksService) {
+    public HashtagService(DataSource dataSource, UserService userService, BookmarksService bookmarksService, HeartsService heartsService) {
         this.dataSource = dataSource;
         this.userService = userService;
         this.bookmarksService = bookmarksService;
+        this.heartsService = heartsService;
     }
 
     /**
@@ -101,12 +103,9 @@ public class HashtagService {
                     String content = rs.getString("content");
                     String postDate = rs.getString("postDate");
                     User postUser = userService.getUser(postUserId); // Get the user object for the post's user
-
-                    // TODO: Placeholder values
-                    int heartsCount = 0;
-                    int commentsCount = 0;
-                    boolean isHearted = false;
-
+                    int heartsCount = rs.getInt("heartsCount");
+                    int commentsCount = rs.getInt("commentsCount");
+                    boolean isHearted = heartsService.isHearted(postId);
                     boolean isBookmarked = bookmarksService.isBookmarked(postId);
 
                     posts.add(new Post(postId, content, postDate, postUser, heartsCount, commentsCount, isHearted,

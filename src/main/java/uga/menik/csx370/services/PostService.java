@@ -46,7 +46,7 @@ public class PostService {
      */
     public List<Post> getPosts(String userId) {
         // Write an SQL query to find the users that are not the current user.
-        final String getPostsSql = "SELECT * FROM posts WHERE userId = ? LIMIT 50"; // limit in case of larger scaling
+        final String getPostsSql = "SELECT * FROM posts WHERE userId = ?";
 
         // prep query params: userId = userId
 
