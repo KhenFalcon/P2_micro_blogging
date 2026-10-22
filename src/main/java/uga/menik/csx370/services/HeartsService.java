@@ -27,7 +27,7 @@ public class HeartsService {
      * @param postId - The postId of the post to check if the user has liked (heart-ed)
      * @return True if the currently logged-in user has liked the post, false otherwise. 
      */
-    public boolean isLiked(String postId) {
+    public boolean isHearted(String postId) {
         // Prep Query - Write an SQL query to insert a check if a user-likes-post entry exists in DB
         final String getLikekSql = "SELECT * FROM hearts WHERE userId = ? AND postId = ?";
 
@@ -61,7 +61,7 @@ public class HeartsService {
      * 
      * @param postId - The postId of the post the currently logged-in user wants to like.
      */
-    public void addLike(String postId) {
+    public void addHeart(String postId) {
         // Prep Query - Write an SQL query to insert a new user-likes-post entry into the database.
         final String createPostSql = "INSERT INTO hearts (userId, postId) VALUES (?, ?)";
 
@@ -91,7 +91,7 @@ public class HeartsService {
      * 
      * @param postId - The postId of the post the corrently logged in user no longer likes.
      */
-    public void remomveLike(String postId) {
+    public void removeHeart(String postId) {
         // Write an SQL query to insert a new post-bookmark into the database.x
         final String createPostSql = "DELETE FROM hearts WHERE userId = ? AND postId = ?";
 
