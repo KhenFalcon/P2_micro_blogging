@@ -301,6 +301,55 @@ public class PostService {
         return false;
     }
 
+    
+    /**
+     *  Allows for me to see posts from currentUser
+     */
+    public List<Post> postsFromCurrentUser(int currentUserId) throws SQLException{
+        String postsMadeByCurrentUser = "select P.postId, P.content, P.postDate, P.userId, P.heartsCount, P.commentsCount, P.isHearted, P.isBookmarked, U.firstName, U.lastName from posts P, user U where P.userId = U.userId and P.userId = ? order by postDate DESC";
+        // selecting all of the posts made by the current logged in user 
+        List<Post> posts = new ArrayList<>();
+        // list storing all posts made by current user 
+
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement registerStmt = conn.prepareStatement(postsMadeByCurrentUser)) {
+                registerStmt.setInt(1, currentUserId);
+
+                try(ResultSet result = registerStmt.executeQuery()) {
+                    while (result.next()) {
+                        // getting values from the query to create a post instance 
+                        // user firstName and lastName are extracted as a User instance is needed when creating Post instance 
+                        String postid = String.valueOf(result.getInt("postId"));
+                        String content = result.getString("content");
+                        Timestamp mysqlPostDate = result.getTimestamp("postDate");
+                        String postDate = "";
+                        if (mysqlPostDate != null) {
+                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, yyyy, hh:mm a", Locale.ENGLISH);
+                            // formatting the date to be in the form: "Mar 07, 2025, 10:54 PM" as this post will be shown in the webpage (specifically Profile)
+                            postDate = mysqlPostDate.toLocalDateTime().format(formatter);
+                        }
+                        
+                        String userId = String.valueOf(result.getInt("userId"));
+                        int heartsCount = result.getInt("heartsCount");
+                        int commentsCount = result.getInt("commentsCount");
+                        boolean isHearted = result.getBoolean("isHearted");
+                        boolean isBookmarked = result.getBoolean("isBookmarked");
+                        String firstName = result.getString("firstName");
+                        String lastName = result.getString("lastName");
+
+                        User user = new User(userId, firstName, lastName);
+                        // information of user who created post 
+                        Post postMadeByCurrentUser = new Post(postid, content, postDate, user, heartsCount, commentsCount, isHearted, isBookmarked);
+                        // Post instance representing post made by current user 
+
+                        posts.add(postMadeByCurrentUser);
+                        // appending to list that stores Post objects 
+                    }
+                }
+            }
+            return posts;
+    }
+
     /**
      * Gets now as a SQL Timestamp object. Formmated as "yyy-MM-dd HH:mm:ss".
      * @return Now as a SQL TimeStamp object

@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import uga.menik.csx370.models.FollowableUser;
+import uga.menik.csx370.models.Post;
 import uga.menik.csx370.models.SuggestedUser;
 import uga.menik.csx370.models.User;
 
@@ -292,18 +293,16 @@ public class PeopleService {
             int targetUserId,
             boolean isFollowing) throws SQLException {
 
-        String followSql =
-                "INSERT INTO followStatus (followerId, followeeId) "
+        String followSql = "INSERT INTO followStatus (followerId, followeeId) "
                 + "VALUES (?, ?)";
 
-        String unfollowSql =
-                "DELETE FROM followStatus "
+        String unfollowSql = "DELETE FROM followStatus "
                 + "WHERE followerId = ? AND followeeId = ?";
 
         String sql = isFollowing ? followSql : unfollowSql;
 
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, currentUserId);
             stmt.setInt(2, targetUserId);
