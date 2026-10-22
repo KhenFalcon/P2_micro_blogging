@@ -67,7 +67,7 @@ public class PostService {
                 while (rs.next()) {
                     String postId = rs.getString("postId");
                     String content = rs.getString("content");
-                    String postDate = rs.getString("postDate");
+                    String postDate = convertTimeStamp(rs.getTimestamp("postDate"));
                     User postUser = userService.getUser(userId); // Get the user object for the post's user
                     int heartsCount = rs.getInt("heartsCount");
                     int commentsCount = rs.getInt("commentsCount");
@@ -118,14 +118,8 @@ public class PostService {
                 if (result.next()) {
                     String postid = String.valueOf(result.getInt("postId"));
                     String content = result.getString("content");
-                    String parsepostDate = result.getString("postDate");
-                    // Timestamp postDate = result.getTimestamp("postDate");
-
-                    // String parsepostDate = "";
-                    // if (postDate != null) {
-                    //     parsepostDate = postDate.toLocalDateTime().format(formatter);
-                    //     // parsing postDate (current time of comment) to be in the format of formatter 
-                    // }
+                    Timestamp postDate = result.getTimestamp("postDate");
+                    String parsepostDate = convertTimeStamp(postDate);
 
                     String userId = result.getString("userId");
                     int heartsCount = result.getInt("heartsCount");
@@ -356,7 +350,7 @@ public class PostService {
      */
     private Timestamp getNow() {
         // Specify the format for postDate to be in the sql database
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy, HH:mm a", Locale.ENGLISH);
 
         // Parsing the current time into that format 
         String parsepostDate = LocalDateTime.now().format(formatter);
@@ -364,5 +358,17 @@ public class PostService {
         // Return formatted time as Timestamp
         LocalDateTime postDate = LocalDateTime.parse(parsepostDate, formatter);
         return Timestamp.valueOf(postDate);
+    }
+
+    public static String convertTimeStamp(Timestamp time) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy, HH:mm a", Locale.ENGLISH);
+
+        String parsepostDate = "";
+        if (time != null) {
+            parsepostDate = time.toLocalDateTime().format(formatter);
+            // parsing postDate (current time of comment) to be in the format of formatter 
+        }
+
+        return parsepostDate;
     }
 }

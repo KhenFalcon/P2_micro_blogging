@@ -101,7 +101,7 @@ public class HashtagService {
                     String postId = rs.getString("postId");
                     String postUserId = rs.getString("userId"); // use to get post's user
                     String content = rs.getString("content");
-                    String postDate = rs.getString("postDate");
+                    String postDate = PostService.convertTimeStamp(rs.getTimestamp("postDate"));
                     User postUser = userService.getUser(postUserId); // Get the user object for the post's user
                     int heartsCount = rs.getInt("heartsCount");
                     int commentsCount = rs.getInt("commentsCount");
