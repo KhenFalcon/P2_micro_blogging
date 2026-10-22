@@ -21,6 +21,8 @@ import org.springframework.web.servlet.ModelAndView;
 import uga.menik.csx370.models.FollowableUser;
 import uga.menik.csx370.services.PeopleService;
 import uga.menik.csx370.services.UserService;
+import uga.menik.csx370.models.SuggestedUser;
+import java.util.ArrayList;
 // import uga.menik.csx370.utility.Utility;
 
 /**
@@ -50,35 +52,41 @@ public class PeopleController {
      * The value to this parameter can be shown to the user as an error message.
      * See notes in HashtagSearchController.java regarding URL parameters.
      */
+    
     @GetMapping
-    public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
-        // See notes on ModelAndView in BookmarksController.java.
+    public ModelAndView webpage(
+           @RequestParam(name = "error", required = false) String error) {
+
         ModelAndView mv = new ModelAndView("people_page");
 
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
-        // Use the PeopleService instance to find followable users.
-        // Use UserService to access logged in userId to exclude.
+        String currentUserId =
+               userService.getLoggedInUser().getUserId();
 
-        String userIdToExclude = userService.getLoggedInUser().getUserId(); // the logged-in user (You can't follow yourself)
-        List<FollowableUser> followableUsers = peopleService.getFollowableUsers(userIdToExclude);
-        mv.addObject("users", followableUsers);
+        // Get suggested users.
+        List<SuggestedUser> suggestedUsers =
+                peopleService.getSuggestedUsers(currentUserId);
 
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
-        // An error message can be optionally specified with a url query parameter too.
-        String errorMessage = error;
-        mv.addObject("errorMessage", errorMessage);
+        // Get all users except the logged-in user.
+        List<FollowableUser> followableUsers =
+               new ArrayList<>(peopleService.getFollowableUsers(currentUserId));
 
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
-        if (followableUsers.isEmpty()) {
-            mv.addObject("isNoContent", true);
+        // Remove suggested users from the regular People list.
+        for (SuggestedUser suggestedUser : suggestedUsers) {
+            followableUsers.removeIf(user ->
+                    user.getUserId().equals(suggestedUser.getUserId()));
         }
-        
+
+        mv.addObject("suggestedUsers", suggestedUsers);
+        mv.addObject("users", followableUsers);
+        mv.addObject("errorMessage", error);
+
+        if (followableUsers.isEmpty() && suggestedUsers.isEmpty()) {
+           mv.addObject("isNoContent", true);
+        }
+
         return mv;
     }
-
+    
     /**
      * This function handles user follow and unfollow.
      * Note the URL has parameters defined as variables ie: {userId} and {isFollow}.
