@@ -32,4 +32,25 @@ public class SuggestedUser extends FollowableUser {
         return recommendationScore;
     }
 
+    private final String lastActiveDate;
+
+    public SuggestedUser(
+            String userId,
+            String firstName,
+            String lastName,
+            int mutualConnections,
+            int sharedHashtags,
+            String lastActiveDate) {
+
+        super(userId, firstName, lastName, false, lastActiveDate);
+
+        this.mutualConnections = mutualConnections;
+        this.sharedHashtags = sharedHashtags;
+        this.lastActiveDate = lastActiveDate;
+    }
+
+    public String getLastActiveDate() {
+        return lastActiveDate;
+    }
+
 }
