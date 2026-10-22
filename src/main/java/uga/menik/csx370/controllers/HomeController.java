@@ -21,6 +21,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.Post;
 import uga.menik.csx370.services.PostService;
+import uga.menik.csx370.services.UserService;
 
 /**
  * This controller handles the home page and some of it's sub URLs.
@@ -30,10 +31,12 @@ import uga.menik.csx370.services.PostService;
 public class HomeController {
 
     private final PostService postService;
+    private final UserService userService;
 
     @Autowired
-    public HomeController(PostService postService) {
+    public HomeController(PostService postService, UserService userService) {
         this.postService = postService;
+        this.userService = userService;
     }
 
     /**
@@ -48,12 +51,15 @@ public class HomeController {
         // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("home_page");
 
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
-        List<Post> posts = postService.getPosts(error);
+        // Populates sample data.
+        String loggedInUserId = userService.getLoggedInUser().getUserId();
+        List<Post> posts = postService.getPostsFromFollowedUsers(loggedInUserId);
+
+        // Posts need to be sorted by recency (project requirements)
         posts = posts.stream()
                 .sorted(Comparator.comparing(Post::getPostDate).reversed())
                 .collect(Collectors.toList());
+
         mv.addObject("posts", posts);
 
         // If an error occured, you can set the following property with the

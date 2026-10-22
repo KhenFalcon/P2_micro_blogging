@@ -7,7 +7,6 @@ package uga.menik.csx370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -20,7 +19,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.ExpandedPost;
 import uga.menik.csx370.services.BookmarksService;
-import uga.menik.csx370.utility.Utility;
+import uga.menik.csx370.services.PostService;
 
 /**
  * Handles /post URL and its sub urls.
@@ -29,10 +28,12 @@ import uga.menik.csx370.utility.Utility;
 @RequestMapping("/post")
 public class PostController {
     private final BookmarksService bookmarksService;
+    private final PostService postService;
 
     @Autowired
-    public PostController(BookmarksService bookmarksService) {
+    public PostController(BookmarksService bookmarksService, PostService postService) {
         this.bookmarksService = bookmarksService;
+        this.postService = postService;
     }
 
     /**
@@ -54,8 +55,11 @@ public class PostController {
 
         // Following line populates sample data.
         // You should replace it with actual data from the database.
-        List<ExpandedPost> posts = Utility.createSampleExpandedPostWithComments();
-        mv.addObject("posts", posts);
+        ExpandedPost expandedPost = postService.getExpandedPost(postId);
+
+        System.out.println("DEBUG: expandedPost = " + expandedPost);
+        mv.addObject("posts", expandedPost);
+        mv.addObject("postId", postId);
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
@@ -65,7 +69,7 @@ public class PostController {
 
         // Enable the following line if you want to show no content message.
         // Do that if your content list is empty.
-        if (posts.isEmpty())
+        if (expandedPost == null)
             mv.addObject("isNoContent", true);
 
         return mv;
@@ -106,8 +110,17 @@ public class PostController {
         System.out.println("\tpostId: " + postId);
         System.out.println("\tisAdd: " + isAdd);
 
-        // Redirect the user if the comment adding is a success.
-        // return "redirect:/post/" + postId;
+        try {
+            boolean successOrNot = postService.addRemoveHeart(isAdd, postId);
+            
+            if (successOrNot) {
+                // Redirect the user if the comment adding is a success.
+                return "redirect:/post/" + postId;
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // Redirect the user with an error message if there was an error.
         String message = URLEncoder.encode("Failed to (un)like the post. Please try again.",
@@ -144,5 +157,4 @@ public class PostController {
             return "redirect:/post/" + postId + "?error=" + message;   
         }
     }
-
 }

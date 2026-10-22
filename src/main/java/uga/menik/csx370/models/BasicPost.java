@@ -81,4 +81,9 @@ public class BasicPost {
     public User getUser() {
         return user;
     }
+    
+    @Override 
+    public String toString() {
+        return "{postId: " + this.postId + ", postDate: " + this.postDate + ", User: " + this.user.toString() + "}";
+    }
 }

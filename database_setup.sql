@@ -26,7 +26,6 @@ create table if not exists posts (
     heartsCount int default 0 ,
     commentsCount int default 0,
     isHearted boolean default false ,
-    isBookmarked boolean default false , 
     primary key (postID), 
     foreign key (userId) references user(userId)
 );
