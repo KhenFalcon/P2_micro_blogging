@@ -57,3 +57,11 @@ CREATE TABLE IF NOT EXISTS bookmarks (
     FOREIGN KEY (userId) REFERENCES user(userId), 
     FOREIGN KEY (postId) REFERENCES posts(postId) 
 );
+
+CREATE TABLE IF NOT EXISTS hearts (
+    userId INT,
+    postId INT,
+    PRIMARY KEY (userId, postId),
+    FOREIGN KEY (userId) REFERENCES user(userId),
+    FOREIGN KEY (postId) REFERENCES posts(postId) 
+);

@@ -76,21 +76,22 @@ public class BookmarksService {
      * @return true if the provided post (ID) is bookmarked by the current logged-in user, false otherwise.
      */
     public boolean isBookmarked(String postId) {
-        if (postId.equals("-1"))
-            return false;
-        
-        // Write an SQL query to find the users that are not the current user.
+        // Prep Query - Write an SQL query to find the users that are not the current user.
         final String getBookmarkSql = "SELECT * FROM bookmarks WHERE userId = ? AND postId = ?";
 
+        // Prep Query Params
+        // postId = postId;
         String userId = userService.getLoggedInUser().getUserId();
 
-        // Run the query with a datasource.
+        // Connect to DB - Run the query with a datasource.
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement getBookmarkStmt = conn.prepareStatement(getBookmarkSql)) {
 
+            // Insert Query Params
             getBookmarkStmt.setString(1, userId);
             getBookmarkStmt.setString(2, postId);
 
+            // Send Query
             try (ResultSet rs = getBookmarkStmt.executeQuery()) {
                 return rs.next(); // Return true/false based on if there is an appropriate entry in bookmarks
             }
@@ -106,21 +107,23 @@ public class BookmarksService {
      * Adds a bookmark associated with the provided postId for the current logged-in user.
      * @param postId
      */    
-    public void addBookmark(String postId) {
-        if (postId.equals("-1"))
-            return;
-        
-        // Write an SQL query to insert a new post-bookmark into the database.
+    public void addBookmark(String postId) {        
+        // Prep Query - Write an SQL query to insert a new post-bookmark into the database.
         final String createPostSql = "INSERT INTO bookmarks (userId, postId) VALUES (?, ?)";
 
-        User user = userService.getLoggedInUser(); // Get the logged in user object
+        // Prep Query Params
+        // postId = postId;
+        String userId = userService.getLoggedInUser().getUserId();
 
+        // Connect to DB
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement createPostStmt = conn.prepareStatement(createPostSql)) {
 
-            createPostStmt.setString(1, user.getUserId());
+            // Insert Query Params
+            createPostStmt.setString(1, userId);
             createPostStmt.setString(2, postId);
 
+            // Send Query
             createPostStmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -132,20 +135,22 @@ public class BookmarksService {
      * @param postId
      */
     public void removeBookmark(String postId) {
-        if (postId.equals("-1"))
-            return;
-        
-        // Write an SQL query to insert a new post-bookmark into the database.x
+        // Prep Query - Write an SQL query to insert a new post-bookmark into the database.
         final String createPostSql = "DELETE FROM bookmarks WHERE userId = ? AND postId = ?";
 
-        User user = userService.getLoggedInUser(); // Get the logged in user object
+        // Prep Query Params
+        // postId = postId;
+        String userId = userService.getLoggedInUser().getUserId();
 
+        // Connect to DB
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement createPostStmt = conn.prepareStatement(createPostSql)) {
 
-            createPostStmt.setString(1, user.getUserId());
+            // Insert Query Params
+            createPostStmt.setString(1, userId);
             createPostStmt.setString(2, postId);
 
+            // Send Query
             createPostStmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

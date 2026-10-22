@@ -27,13 +27,15 @@ public class PostService {
     private final UserService userService;
     private final BookmarksService bookmarksService;
     private final CommentService commentService;
+    private final HeartsService heartsService;
 
     @Autowired
-    public PostService(DataSource dataSource, UserService userService, BookmarksService bookmarksService, CommentService commentService) {
+    public PostService(DataSource dataSource, UserService userService, BookmarksService bookmarksService, CommentService commentService, HeartsService heartsService) {
         this.dataSource = dataSource;
         this.userService = userService;
         this.bookmarksService = bookmarksService;
         this.commentService = commentService;
+        this.heartsService = heartsService;
     }
 
     /**
@@ -69,8 +71,8 @@ public class PostService {
                     User postUser = userService.getUser(userId); // Get the user object for the post's user
                     int heartsCount = rs.getInt("heartsCount");
                     int commentsCount = rs.getInt("commentsCount");
-                    boolean isHearted = rs.getBoolean("isHearted"); // DEPRECIATED: not in SQL db anymore. Needs it's own table
-                    boolean isBookmarked = bookmarksService.isBookmarked(postId); // isHearted needs to follow a similar format
+                    boolean isHearted = heartsService.isHearted(postId);
+                    boolean isBookmarked = bookmarksService.isBookmarked(postId);
 
                     posts.add(new Post(postId, content, postDate, postUser, heartsCount, commentsCount, isHearted,
                             isBookmarked));
@@ -128,7 +130,7 @@ public class PostService {
                     String userId = result.getString("userId");
                     int heartsCount = result.getInt("heartsCount");
                     int commentsCount = result.getInt("commentsCount");
-                    boolean isHearted = result.getBoolean("isHearted");
+                    boolean isHearted = heartsService.isHearted(postid);
                     boolean isBookmarked = bookmarksService.isBookmarked(postid);
 
                     User user = userService.getUser(userId);
@@ -143,6 +145,42 @@ public class PostService {
         }
 
         return expandedPost;
+    }
+
+    /**
+     * 
+     * Generates comments that can be added to a post.
+     * Returns true if the post was added to a specifc comment successfully, false otherwise. 
+     */
+    public boolean comment(String postId, String content) throws SQLException{
+        String createComment = "insert into comment (postId, content, postDate, userId) values (?, ?, ?, ?)";
+        String updateCommentsCount = "update posts set commentsCount = commentsCount + 1 where postId = ?";
+        // updates the commentsCount variable when adding a comment 
+
+        String userId = userService.getLoggedInUser().getUserId();
+
+        // Prep Query params: postId = postId
+
+        // Connect to db - creating ExpandedPost based on sql query
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement registerStmt = conn.prepareStatement(createComment)) {
+                // placeholders are removed and replaced with actual data 
+                registerStmt.setString(1, postId);
+                registerStmt.setString(2, content);
+                registerStmt.setTimestamp(3, getNow());
+                registerStmt.setString(4, userId);
+
+                registerStmt.executeUpdate();
+
+                try (PreparedStatement registerStmt1 = conn.prepareStatement(updateCommentsCount)) {
+                        registerStmt1.setString(1, postId);
+
+                         int rowsAffected = registerStmt1.executeUpdate();
+                         return rowsAffected > 0;
+                        //seeing if number of rows affected is > 0, i.e trying to see if at least 1 row has been update
+                        // obtained from UserService.java
+                    }
+            }
     }
 
      /**
@@ -161,10 +199,17 @@ public class PostService {
      * @returns True if the action was a success, false otherwise.
      */
     public boolean addRemoveHeart(boolean isAdd, String postId) {
-        final String addHeart = "UPDATE posts SET isHearted = true, heartsCount = heartsCount + 1 WHERE postId = ?";
-        final String removeHeart = "UPDATE posts SET isHearted = false, heartsCount = heartsCount - 1 WHERE postId = ?";
+        final String addHeart = "UPDATE posts SET heartsCount = heartsCount + 1 WHERE postId = ?";
+        final String removeHeart = "UPDATE posts SET heartsCount = heartsCount - 1 WHERE postId = ?";
 
-        String heartQuery = isAdd ? addHeart : removeHeart;
+        String heartQuery;
+        if (isAdd) {
+            heartQuery = addHeart;
+            heartsService.addHeart(postId);
+        } else {
+            heartQuery = removeHeart;
+            heartsService.removeHeart(postId);
+        }
 
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement registerStmt = conn.prepareStatement(heartQuery)) {
