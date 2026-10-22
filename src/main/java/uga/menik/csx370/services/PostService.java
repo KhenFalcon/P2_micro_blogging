@@ -159,6 +159,9 @@ public class PostService {
 
         String userId = userService.getLoggedInUser().getUserId();
 
+        // Prep Query params: postId = postId
+
+        // Connect to db - creating ExpandedPost based on sql query
         try (Connection conn = dataSource.getConnection();
             PreparedStatement registerStmt = conn.prepareStatement(createComment)) {
                 // placeholders are removed and replaced with actual data 
