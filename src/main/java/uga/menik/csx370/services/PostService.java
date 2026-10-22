@@ -147,6 +147,39 @@ public class PostService {
         return expandedPost;
     }
 
+    /**
+     * 
+     * Generates comments that can be added to a post.
+     * Returns true if the post was added to a specifc comment successfully, false otherwise. 
+     */
+    public boolean comment(String postId, String content) throws SQLException{
+        String createComment = "insert into comment (postId, content, postDate, userId) values (?, ?, ?, ?)";
+        String updateCommentsCount = "update posts set commentsCount = commentsCount + 1 where postId = ?";
+        // updates the commentsCount variable when adding a comment 
+
+        String userId = userService.getLoggedInUser().getUserId();
+
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement registerStmt = conn.prepareStatement(createComment)) {
+                // placeholders are removed and replaced with actual data 
+                registerStmt.setString(1, postId);
+                registerStmt.setString(2, content);
+                registerStmt.setTimestamp(3, getNow());
+                registerStmt.setString(4, userId);
+
+                registerStmt.executeUpdate();
+
+                try (PreparedStatement registerStmt1 = conn.prepareStatement(updateCommentsCount)) {
+                        registerStmt1.setString(1, postId);
+
+                         int rowsAffected = registerStmt1.executeUpdate();
+                         return rowsAffected > 0;
+                        //seeing if number of rows affected is > 0, i.e trying to see if at least 1 row has been update
+                        // obtained from UserService.java
+                    }
+            }
+    }
+
      /**
      * Allows the user to add or remove a heart from a post.
      * 
