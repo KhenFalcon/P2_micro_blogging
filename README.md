@@ -31,5 +31,8 @@ This project is meant to simulate a web-blogging application, where users can in
 - Managed contribution form
 
 **Adiva Parisa:**
+- Implemented a Who to Follow feature that recommends users based on mutual connections and shared hashtags in recent posts.
+- Added recommendation scoring, ranking, and filtering to exclude users with no recommendation signals.
+- Integrated the recommendations into the People page with a message for when no recommendations are available.
 
 ## How to Use:

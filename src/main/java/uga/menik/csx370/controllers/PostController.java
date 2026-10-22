@@ -7,6 +7,7 @@ package uga.menik.csx370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -88,8 +89,16 @@ public class PostController {
         System.out.println("\tpostId: " + postId);
         System.out.println("\tcomment: " + comment);
 
-        // Redirect the user if the comment adding is a success.
-        // return "redirect:/post/" + postId;
+        try {
+            boolean successOrNot = postService.comment(postId, comment);
+
+            if (successOrNot) {
+                // Redirect the user if the comment adding is a success.
+                return "redirect:/post/" + postId;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
         // Redirect the user with an error message if there was an error.
         String message = URLEncoder.encode("Failed to post the comment. Please try again.",
