@@ -54,18 +54,21 @@ public class PeopleController {
      */
     
     @GetMapping
-    public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
+    public ModelAndView webpage(
+           @RequestParam(name = "error", required = false) String error) {
+
         ModelAndView mv = new ModelAndView("people_page");
 
-        String currentUserId = userService.getLoggedInUser().getUserId();
+        String currentUserId =
+               userService.getLoggedInUser().getUserId();
 
-        // Get suggested users first.
+        // Get suggested users.
         List<SuggestedUser> suggestedUsers =
                 peopleService.getSuggestedUsers(currentUserId);
 
-        // Get all other users in a modifiable list.
+        // Get all users except the logged-in user.
         List<FollowableUser> followableUsers =
-                new ArrayList<>(peopleService.getFollowableUsers(currentUserId));
+               new ArrayList<>(peopleService.getFollowableUsers(currentUserId));
 
         // Remove suggested users from the regular People list.
         for (SuggestedUser suggestedUser : suggestedUsers) {
@@ -78,12 +81,11 @@ public class PeopleController {
         mv.addObject("errorMessage", error);
 
         if (followableUsers.isEmpty() && suggestedUsers.isEmpty()) {
-            mv.addObject("isNoContent", true);
+           mv.addObject("isNoContent", true);
         }
 
         return mv;
     }
-
     
     /**
      * This function handles user follow and unfollow.
