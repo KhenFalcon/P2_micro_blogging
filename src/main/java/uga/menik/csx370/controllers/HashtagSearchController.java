@@ -60,7 +60,7 @@ public class HashtagSearchController {
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
-        String errorMessage = "Some error occured!";
+        String errorMessage = error; // previously "Some error occured!" (caused perpetual error message)
         mv.addObject("errorMessage", errorMessage);
 
         // Enable the following line if you want to show no content message.
